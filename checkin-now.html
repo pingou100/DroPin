@@ -23,9 +23,11 @@
             top: 0;
             left: 0;
             right: 0;
-            background: white;
-            padding: 12px 20px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            padding: 10px 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.06);
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -34,57 +36,86 @@
         
         .nav-links {
             display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
+            gap: 2px;
+            flex-wrap: nowrap;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
         
         .nav-link, .export-btn {
-            padding: 8px 16px;
-            background: #007aff;
-            color: white;
+            padding: 8px 12px;
+            background: transparent;
+            color: #8e8e93;
             text-decoration: none;
             border-radius: 8px;
-            font-size: 14px;
+            font-size: 13px;
+            font-weight: 500;
             border: none;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.15s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            white-space: nowrap;
+            -webkit-tap-highlight-color: transparent;
         }
         
         .nav-link:hover, .export-btn:hover {
-            background: #0051d5;
+            background: rgba(0, 0, 0, 0.04);
+            color: #1d1d1f;
         }
         
         .nav-link.active {
-            background: #34c759;
+            background: rgba(0, 122, 255, 0.08);
+            color: #007aff;
+        }
+        
+        .nav-icon {
+            font-size: 15px;
+            line-height: 1;
+        }
+        
+        .export-btn {
+            color: #007aff;
+            margin-left: 4px;
+        }
+        
+        .export-btn:hover {
+            background: rgba(0, 122, 255, 0.06);
         }
         
         .container {
             max-width: 600px;
-            margin: 80px auto 20px;
+            margin: 70px auto 20px;
             padding: 0 20px;
         }
         
         .loading {
             background: white;
-            border-radius: 12px;
-            padding: 40px;
+            border-radius: 16px;
+            padding: 48px 24px;
             text-align: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
         }
         
         .loading-spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid #f5f5f7;
-            border-top: 4px solid #007aff;
+            width: 32px;
+            height: 32px;
+            border: 3px solid #f5f5f7;
+            border-top: 3px solid #007aff;
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin: 0 auto 20px;
+            margin: 0 auto 16px;
         }
         
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+        
+        .loading p {
+            color: #8e8e93;
+            font-size: 14px;
         }
         
         .venue-list {
@@ -97,30 +128,37 @@
         
         .venue-item {
             background: white;
-            border-radius: 12px;
+            border-radius: 14px;
             padding: 16px;
-            margin-bottom: 12px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 10px;
+            box-shadow: 0 1px 4px rgba(0,0,0,0.04);
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: all 0.15s ease;
+            -webkit-tap-highlight-color: transparent;
         }
         
         .venue-item:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        
+        .venue-item:active {
+            transform: scale(0.98);
         }
         
         .venue-name {
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
             color: #1d1d1f;
             margin-bottom: 4px;
+            letter-spacing: -0.2px;
         }
         
         .venue-address {
             font-size: 13px;
-            color: #86868b;
+            color: #8e8e93;
             margin-bottom: 8px;
+            line-height: 1.4;
         }
         
         .venue-distance {
@@ -131,9 +169,9 @@
         
         .checkin-form {
             background: white;
-            border-radius: 12px;
+            border-radius: 16px;
             padding: 24px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
             display: none;
         }
         
@@ -143,14 +181,16 @@
         
         h2 {
             font-size: 20px;
+            font-weight: 600;
             color: #1d1d1f;
             margin-bottom: 20px;
+            letter-spacing: -0.3px;
         }
         
         .selected-venue-info {
             background: #f5f5f7;
-            padding: 12px;
-            border-radius: 8px;
+            padding: 14px;
+            border-radius: 10px;
             margin-bottom: 20px;
         }
         
@@ -158,11 +198,13 @@
             font-weight: 600;
             color: #1d1d1f;
             margin-bottom: 4px;
+            font-size: 14px;
         }
         
         .selected-venue-address {
-            font-size: 13px;
-            color: #86868b;
+            font-size: 12px;
+            color: #8e8e93;
+            line-height: 1.4;
         }
         
         .form-group {
@@ -171,7 +213,7 @@
         
         label {
             display: block;
-            font-size: 14px;
+            font-size: 13px;
             font-weight: 500;
             color: #1d1d1f;
             margin-bottom: 8px;
@@ -180,39 +222,47 @@
         input[type="datetime-local"],
         textarea {
             width: 100%;
-            padding: 12px;
+            padding: 12px 14px;
             border: 1px solid #d1d1d6;
-            border-radius: 8px;
+            border-radius: 10px;
             font-size: 15px;
             color: #1d1d1f;
             background: white;
+            transition: border-color 0.15s;
+        }
+        
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #007aff;
         }
         
         textarea {
             resize: vertical;
             min-height: 80px;
+            font-family: inherit;
         }
         
         .helper-text {
-            font-size: 13px;
-            color: #86868b;
-            margin-top: 4px;
+            font-size: 12px;
+            color: #8e8e93;
+            margin-top: 6px;
         }
         
         .button-group {
             display: flex;
-            gap: 12px;
+            gap: 10px;
         }
         
         .btn {
             flex: 1;
-            padding: 14px;
+            padding: 13px;
             border: none;
-            border-radius: 8px;
-            font-size: 16px;
+            border-radius: 10px;
+            font-size: 15px;
             font-weight: 500;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.15s ease;
+            -webkit-tap-highlight-color: transparent;
         }
         
         .btn-primary {
@@ -224,30 +274,38 @@
             background: #0051d5;
         }
         
+        .btn-primary:active {
+            transform: scale(0.97);
+        }
+        
         .btn-secondary {
-            background: #d1d1d6;
+            background: #f5f5f7;
             color: #1d1d1f;
         }
         
         .btn-secondary:hover {
-            background: #b1b1b6;
+            background: #e5e5e7;
+        }
+        
+        .btn-secondary:active {
+            transform: scale(0.97);
         }
         
         .success-toast {
             position: fixed;
-            top: 80px;
+            top: 70px;
             left: 50%;
-            transform: translateX(-50%) translateY(-100px);
+            transform: translateX(-50%) translateY(-60px);
             background: #34c759;
             color: white;
-            padding: 16px 24px;
-            border-radius: 8px;
-            font-size: 15px;
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-size: 14px;
             font-weight: 500;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            box-shadow: 0 4px 16px rgba(52, 199, 89, 0.3);
             z-index: 2000;
             opacity: 0;
-            transition: opacity 0.3s, transform 0.3s;
+            transition: opacity 0.2s, transform 0.2s;
         }
         
         .success-toast.show {
@@ -257,15 +315,15 @@
         
         .error-message {
             background: white;
-            border-radius: 12px;
-            padding: 24px;
+            border-radius: 16px;
+            padding: 32px 24px;
             text-align: center;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
         }
         
         .error-icon {
             font-size: 48px;
-            margin-bottom: 12px;
+            margin-bottom: 16px;
         }
         
         .error-title {
@@ -273,27 +331,52 @@
             font-weight: 600;
             color: #1d1d1f;
             margin-bottom: 8px;
+            letter-spacing: -0.3px;
         }
         
         .error-text {
             font-size: 14px;
-            color: #86868b;
-            margin-bottom: 20px;
+            color: #8e8e93;
+            margin-bottom: 24px;
+            line-height: 1.5;
+        }
+        
+        @media (max-width: 480px) {
+            .nav-link, .export-btn {
+                font-size: 12px;
+                padding: 7px 10px;
+                gap: 4px;
+            }
+            
+            .nav-icon {
+                font-size: 14px;
+            }
         }
     </style>
 </head>
 <body>
     <nav class="nav-menu">
         <div class="nav-links">
-            <a href="index.html" class="nav-link">🗺️ My Map</a>
-            <a href="checkin-now.html" class="nav-link active">⚡ Check-in Now</a>
-            <a href="add-checkin.html" class="nav-link">➕ Add Checkin</a>
+            <a href="index.html" class="nav-link">
+                <span class="nav-icon">○</span>
+                <span>Map</span>
+            </a>
+            <a href="checkin-now.html" class="nav-link active">
+                <span class="nav-icon">⊕</span>
+                <span>Check in</span>
+            </a>
+            <a href="add-checkin.html" class="nav-link">
+                <span class="nav-icon">✎</span>
+                <span>Add</span>
+            </a>
         </div>
-        <button class="export-btn" onclick="exportNewCheckins()">📥 Export CSV</button>
+        <button class="export-btn" onclick="exportNewCheckins()">
+            <span class="nav-icon">↓</span>
+        </button>
     </nav>
     
     <div class="success-toast" id="successToast">
-        ✓ Check-in saved!
+        ✓ Check-in saved
     </div>
     
     <div class="container">
@@ -318,13 +401,13 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="notes">Notes (optional)</label>
-                    <textarea id="notes" placeholder="Add any notes about this visit..."></textarea>
+                    <label for="notes">Notes</label>
+                    <textarea id="notes" placeholder="Optional notes..."></textarea>
                 </div>
                 
                 <div class="button-group">
                     <button type="button" class="btn btn-secondary" onclick="goBackToList()">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Check-in</button>
+                    <button type="submit" class="btn btn-primary">Save</button>
                 </div>
             </form>
         </div>
@@ -336,25 +419,44 @@
         let selectedVenue = null;
         let allVenues = [];
         
+        // Relevant venue types to include
+        const RELEVANT_TYPES = [
+            'restaurant', 'cafe', 'bar', 'food', 'meal_takeaway', 'meal_delivery',
+            'bakery', 'coffee_shop', 'fast_food_restaurant',
+            'lodging', 'hotel', 'hostel', 'resort_hotel',
+            'tourist_attraction', 'museum', 'art_gallery', 'aquarium', 'zoo',
+            'amusement_park', 'bowling_alley', 'casino', 'movie_theater',
+            'night_club', 'park', 'stadium', 'gym', 'spa', 'shopping_mall', 'store',
+            'beach', 'campground', 'hiking_area', 'national_park'
+        ];
+        
         // Initialize - get location and find nearby places
         window.addEventListener('load', () => {
             getNearbyPlaces();
         });
         
         async function getNearbyPlaces() {
-            // Get user's location
+            // Check if geolocation is supported
             if (!navigator.geolocation) {
-                showError('Location not supported', 'Your browser doesn\'t support location services.');
+                showError('Location not supported', 'Your device doesn\'t support location services.');
                 return;
             }
             
             try {
+                // Request location with explicit options for Safari
                 const position = await new Promise((resolve, reject) => {
-                    navigator.geolocation.getCurrentPosition(resolve, reject, {
-                        enableHighAccuracy: true,
-                        timeout: 10000,
-                        maximumAge: 0
-                    });
+                    navigator.geolocation.getCurrentPosition(
+                        resolve,
+                        (error) => {
+                            console.error('Geolocation error:', error);
+                            reject(error);
+                        },
+                        {
+                            enableHighAccuracy: true,
+                            timeout: 15000,
+                            maximumAge: 0
+                        }
+                    );
                 });
                 
                 currentLocation = {
@@ -362,16 +464,24 @@
                     longitude: position.coords.longitude
                 };
                 
-                // Try 100m radius first
-                let venues = await searchNearby(100);
+                console.log('Location:', currentLocation);
                 
-                // If less than 5 results, expand to 500m
+                // Try progressively larger radii with filtering
+                let venues = await searchNearby(100);
+                console.log(`100m search: ${venues.length} venues`);
+                
                 if (venues.length < 5) {
                     venues = await searchNearby(500);
+                    console.log(`500m search: ${venues.length} venues`);
+                }
+                
+                if (venues.length < 10) {
+                    venues = await searchNearby(1000);
+                    console.log(`1km search: ${venues.length} venues`);
                 }
                 
                 if (venues.length === 0) {
-                    showError('No places found', 'No venues found within 500m. Try manual check-in.');
+                    showError('No places found', 'No relevant venues found nearby. Redirecting to manual check-in...');
                     setTimeout(() => {
                         window.location.href = 'add-checkin.html';
                     }, 3000);
@@ -382,13 +492,22 @@
                 
             } catch (error) {
                 console.error('Location error:', error);
-                showError(
-                    'Location access denied',
-                    'Please enable location access to use quick check-in. Redirecting to manual check-in...'
-                );
+                
+                let errorMessage = 'Please enable location access in your browser settings. Redirecting to manual check-in...';
+                
+                if (error.code === 1) {
+                    errorMessage = 'Location permission denied. Please enable location access in your browser settings. Redirecting...';
+                } else if (error.code === 2) {
+                    errorMessage = 'Location unavailable. Please check your device settings. Redirecting...';
+                } else if (error.code === 3) {
+                    errorMessage = 'Location request timed out. Please try again or use manual check-in...';
+                }
+                
+                showError('Location access needed', errorMessage);
+                
                 setTimeout(() => {
                     window.location.href = 'add-checkin.html';
-                }, 3000);
+                }, 4000);
             }
         }
         
@@ -420,8 +539,14 @@
                 const data = await response.json();
                 
                 if (data.places) {
+                    // Filter to relevant venue types
+                    const filteredPlaces = data.places.filter(place => {
+                        if (!place.types) return false;
+                        return place.types.some(type => RELEVANT_TYPES.includes(type));
+                    });
+                    
                     // Calculate distances and sort
-                    return data.places.map(place => {
+                    return filteredPlaces.map(place => {
                         const distance = calculateDistance(
                             currentLocation.latitude,
                             currentLocation.longitude,
@@ -599,7 +724,7 @@
                     <div class="error-icon">⚠️</div>
                     <div class="error-title">${title}</div>
                     <div class="error-text">${message}</div>
-                    <a href="add-checkin.html" class="btn btn-primary" style="display: inline-block; text-decoration: none;">Go to Manual Check-in</a>
+                    <a href="add-checkin.html" class="btn btn-primary" style="display: inline-block; text-decoration: none; padding: 13px 24px;">Manual Check-in</a>
                 </div>
             `;
         }
