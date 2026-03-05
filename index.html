@@ -321,8 +321,8 @@
     <script>
         // Initialize map
         const map = L.map('map', {
-            center: [50.5, 4.5], // Belgium center as default
-            zoom: 6,
+            center: [50.8503, 4.3517], // Brussels, Belgium
+            zoom: window.innerWidth < 768 ? 7 : 6, // Zoom 7 for mobile, 6 for desktop
             zoomControl: true
         });
         
@@ -691,20 +691,46 @@ Google Maps: ${googleMapsUrl}`;
                 return;
             }
             
+            // Group by venue_id to find duplicates
+            const venueMap = new Map();
+            results.forEach(checkin => {
+                const venueId = checkin.venue_id || checkin.venue_name; // Use ID or name as key
+                
+                if (!venueMap.has(venueId)) {
+                    venueMap.set(venueId, {
+                        checkin: checkin, // Store the first (most recent) checkin
+                        count: 1
+                    });
+                } else {
+                    venueMap.get(venueId).count++;
+                }
+            });
+            
+            // Convert map to array and sort by venue name
+            const uniqueVenues = Array.from(venueMap.values()).sort((a, b) => 
+                (a.checkin.venue_name || '').localeCompare(b.checkin.venue_name || '')
+            );
+            
             // Add count header
             const countDiv = document.createElement('div');
             countDiv.className = 'search-count';
-            countDiv.textContent = `Found ${results.length} venue${results.length === 1 ? '' : 's'}`;
+            const totalCheckins = results.length;
+            const uniqueCount = uniqueVenues.length;
+            countDiv.textContent = `Found ${uniqueCount} venue${uniqueCount === 1 ? '' : 's'} (${totalCheckins} checkin${totalCheckins === 1 ? '' : 's'})`;
             searchResults.appendChild(countDiv);
             
-            // Add results (max 5 visible, scrollable)
-            results.slice(0, 50).forEach(checkin => {
+            // Add results (max 50, but only 5 visible with scroll)
+            uniqueVenues.slice(0, 50).forEach(venue => {
+                const checkin = venue.checkin;
+                const visitCount = venue.count;
+                
                 const item = document.createElement('div');
                 item.className = 'search-result-item';
                 
                 const venueName = document.createElement('div');
                 venueName.className = 'search-result-venue';
-                venueName.textContent = checkin.venue_name || 'Unknown';
+                const visitText = visitCount > 1 ? ` (${visitCount} visits)` : '';
+                venueName.textContent = `${checkin.venue_name || 'Unknown'}${visitText}`;
                 
                 const location = document.createElement('div');
                 location.className = 'search-result-location';
@@ -722,7 +748,7 @@ Google Maps: ${googleMapsUrl}`;
                         // Center and zoom map
                         map.setView([lat, lng], 16);
                         
-                        // Find and open the marker's popup
+                        // Find and open the marker's popup (will show most recent checkin at this venue)
                         markers.eachLayer(marker => {
                             if (marker.checkinData && marker.checkinData.checkin_id === checkin.checkin_id) {
                                 marker.openPopup();
