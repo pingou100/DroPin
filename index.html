@@ -23,14 +23,52 @@
             background: #f5f5f7;
         }
         
+        .nav-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 12px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1002;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .nav-link, .export-btn {
+            padding: 8px 16px;
+            background: #007aff;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .nav-link:hover, .export-btn:hover {
+            background: #0051d5;
+        }
+        
+        .nav-link.active {
+            background: #34c759;
+        }
+        
         #map {
             position: absolute;
-            top: 0;
+            top: 48px;
             left: 0;
             right: 0;
             bottom: 0;
             width: 100%;
-            height: 100%;
             padding-bottom: 60px;
         }
         
@@ -177,11 +215,11 @@
         
         .search-container {
             position: fixed;
-            bottom: 72px;
+            top: 120px;
             left: 12px;
             right: 12px;
             max-width: 400px;
-            z-index: 1001;
+            z-index: 999;
         }
         
         .search-box {
@@ -210,7 +248,7 @@
         
         .search-results {
             position: absolute;
-            bottom: 52px;
+            top: 52px;
             left: 0;
             right: 0;
             background: white;
@@ -290,6 +328,14 @@
     </style>
 </head>
 <body>
+    <nav class="nav-menu">
+        <div class="nav-links">
+            <a href="index.html" class="nav-link active">🗺️ My Map</a>
+            <a href="add-checkin.html" class="nav-link">➕ Add Checkin</a>
+        </div>
+        <button class="export-btn" onclick="exportAllCheckins()">📥 Export All</button>
+    </nav>
+    
     <div class="search-container">
         <span class="search-icon">🔍</span>
         <input type="text" id="searchBox" class="search-box" placeholder="Search venues or cities...">
@@ -325,10 +371,13 @@
     <script>
         // Initialize map
         const map = L.map('map', {
-            center: [50.8503, 4.3517], // Brussels, Belgium
-            zoom: window.innerWidth < 768 ? 7 : 6, // Zoom 7 for mobile, 6 for desktop
+            center: [50.8503, 4.3517], // Brussels, Belgium (temporary until data loads)
+            zoom: window.innerWidth < 768 ? 7 : 6,
             zoomControl: true
         });
+        
+        // Move zoom controls to top-right to avoid search box conflict
+        map.zoomControl.setPosition('topright');
         
         // Add light/clean tile layer (Apple Maps style)
         L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
@@ -418,6 +467,24 @@
                 
                 // Initial render
                 updateMap();
+                
+                // Fit map to show all checkins on initial load
+                if (allCheckins.length > 0) {
+                    const bounds = L.latLngBounds();
+                    allCheckins.forEach(checkin => {
+                        const lat = parseFloat(checkin.latitude);
+                        const lng = parseFloat(checkin.longitude);
+                        if (!isNaN(lat) && !isNaN(lng)) {
+                            bounds.extend([lat, lng]);
+                        }
+                    });
+                    
+                    if (bounds.isValid()) {
+                        // Fit to bounds with padding, adjust for mobile
+                        const padding = window.innerWidth < 768 ? [80, 80] : [50, 50];
+                        map.fitBounds(bounds, { padding: padding });
+                    }
+                }
                 
             } catch (error) {
                 console.error('Error loading data:', error);
@@ -541,10 +608,7 @@
             // Update visible count
             document.getElementById('visibleCount').textContent = filtered.length;
             
-            // Fit bounds if there are markers
-            if (filtered.length > 0 && markers.getBounds().isValid()) {
-                map.fitBounds(markers.getBounds(), { padding: [50, 50] });
-            }
+            // Don't auto-fit bounds here (only on initial load)
             
             return filtered;
         }
@@ -776,6 +840,45 @@ Google Maps: ${googleMapsUrl}`;
                 searchResults.classList.remove('show');
             }
         });
+        
+        // Export all checkins function
+        function exportAllCheckins() {
+            if (!allCheckins || allCheckins.length === 0) {
+                alert('No checkins loaded yet');
+                return;
+            }
+            
+            // Export current CSV data
+            const headers = [
+                'checkin_id', 'venue_name', 'venue_type', 'date', 'time', 'year', 'month',
+                'latitude', 'longitude', 'street_address', 'city', 'state',
+                'postal_code', 'country', 'country_code', 'full_address', 
+                'foursquare_url', 'venue_id'
+            ];
+            
+            let csv = headers.join(',') + '\n';
+            
+            allCheckins.forEach(checkin => {
+                const row = headers.map(header => {
+                    let value = checkin[header] || '';
+                    if (typeof value === 'string' && (value.includes(',') || value.includes('"') || value.includes('\n'))) {
+                        value = '"' + value.replace(/"/g, '""') + '"';
+                    }
+                    return value;
+                });
+                csv += row.join(',') + '\n';
+            });
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `all_checkins_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+        }
         
         // Initialize
         loadData();

@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Add Checkin</title>
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: #f5f5f7;
+            padding: 20px;
+            padding-bottom: 80px;
+        }
+        
+        .nav-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: white;
+            padding: 12px 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 12px;
+        }
+        
+        .nav-link, .export-btn {
+            padding: 8px 16px;
+            background: #007aff;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            font-size: 14px;
+            border: none;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .nav-link:hover, .export-btn:hover {
+            background: #0051d5;
+        }
+        
+        .nav-link.active {
+            background: #34c759;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 80px auto 20px;
+            background: white;
+            border-radius: 12px;
+            padding: 24px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            font-size: 24px;
+            color: #1d1d1f;
+            margin-bottom: 24px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            color: #1d1d1f;
+            margin-bottom: 8px;
+        }
+        
+        input[type="text"],
+        input[type="datetime-local"],
+        textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #d1d1d6;
+            border-radius: 8px;
+            font-size: 15px;
+            color: #1d1d1f;
+            background: white;
+        }
+        
+        input:focus, textarea:focus {
+            outline: none;
+            border-color: #007aff;
+        }
+        
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+        
+        .toggle-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        
+        .toggle {
+            position: relative;
+            width: 50px;
+            height: 28px;
+        }
+        
+        .toggle input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #d1d1d6;
+            border-radius: 28px;
+            transition: .3s;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 22px;
+            width: 22px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            border-radius: 50%;
+            transition: .3s;
+        }
+        
+        .toggle input:checked + .toggle-slider {
+            background-color: #007aff;
+        }
+        
+        .toggle input:checked + .toggle-slider:before {
+            transform: translateX(22px);
+        }
+        
+        .disambiguation {
+            border: 1px solid #d1d1d6;
+            border-radius: 8px;
+            margin-top: 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            display: none;
+        }
+        
+        .disambiguation.show {
+            display: block;
+        }
+        
+        .venue-option {
+            padding: 12px;
+            border-bottom: 1px solid #f5f5f7;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .venue-option:last-child {
+            border-bottom: none;
+        }
+        
+        .venue-option:hover {
+            background: #f5f5f7;
+        }
+        
+        .venue-option-name {
+            font-weight: 500;
+            color: #1d1d1f;
+            margin-bottom: 4px;
+        }
+        
+        .venue-option-address {
+            font-size: 13px;
+            color: #86868b;
+        }
+        
+        .auto-filled {
+            background: #f5f5f7;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 13px;
+            color: #86868b;
+        }
+        
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            background: #007aff;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .btn-primary:hover {
+            background: #0051d5;
+        }
+        
+        .btn-primary:disabled {
+            background: #d1d1d6;
+            cursor: not-allowed;
+        }
+        
+        .success-message {
+            background: #34c759;
+            color: white;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .success-message.show {
+            display: block;
+        }
+        
+        .saved-count {
+            text-align: center;
+            color: #86868b;
+            font-size: 14px;
+            margin-top: 12px;
+        }
+        
+        .helper-text {
+            font-size: 13px;
+            color: #86868b;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav-menu">
+        <div class="nav-links">
+            <a href="index.html" class="nav-link">🗺️ My Map</a>
+            <a href="add-checkin.html" class="nav-link active">➕ Add Checkin</a>
+        </div>
+        <button class="export-btn" onclick="exportNewCheckins()">📥 Export CSV</button>
+    </nav>
+    
+    <div class="container">
+        <h1>Add New Checkin</h1>
+        
+        <div id="successMessage" class="success-message">
+            ✓ Checkin saved successfully!
+        </div>
+        
+        <form id="checkinForm">
+            <div class="form-group">
+                <label for="venueSearch">Search Venue *</label>
+                <input type="text" id="venueSearch" placeholder="Type venue name..." required>
+                <div class="helper-text">Start typing to search nearby places</div>
+                <div id="disambiguation" class="disambiguation"></div>
+            </div>
+            
+            <div id="selectedVenue" style="display: none;">
+                <div class="form-group">
+                    <label>Selected Venue</label>
+                    <div class="auto-filled">
+                        <strong id="venueName"></strong><br>
+                        <span id="venueAddress"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="checkinDate">Date & Time *</label>
+                <input type="datetime-local" id="checkinDate" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="notes">Notes</label>
+                <textarea id="notes" placeholder="Add any notes about this visit..."></textarea>
+            </div>
+            
+            <div class="form-group">
+                <div class="toggle-group">
+                    <label class="toggle">
+                        <input type="checkbox" id="isPrivate">
+                        <span class="toggle-slider"></span>
+                    </label>
+                    <label for="isPrivate" style="margin: 0;">Private checkin</label>
+                </div>
+                <div class="helper-text">Private checkins won't be shared publicly</div>
+            </div>
+            
+            <button type="submit" class="btn-primary" id="saveBtn">Save Checkin</button>
+        </form>
+        
+        <div class="saved-count">
+            <span id="savedCount">0</span> new checkin(s) waiting to be exported
+        </div>
+    </div>
+    
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyBsnG8ALnfbm4uKhbSsAw_xkDF7ibZwbZ4&libraries=places"></script>
+    <script>
+        let selectedPlace = null;
+        let autocompleteService;
+        let placesService;
+        let geocoder;
+        
+        // Initialize Google Maps services
+        function initServices() {
+            autocompleteService = new google.maps.places.AutocompleteService();
+            const dummyMap = document.createElement('div');
+            placesService = new google.maps.places.PlacesService(dummyMap);
+            geocoder = new google.maps.Geocoder();
+        }
+        
+        // Initialize
+        window.addEventListener('load', () => {
+            initServices();
+            updateSavedCount();
+            
+            // Set current date/time as default
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('checkinDate').value = now.toISOString().slice(0, 16);
+        });
+        
+        // Venue search with autocomplete
+        const venueSearch = document.getElementById('venueSearch');
+        let searchTimeout;
+        
+        venueSearch.addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            const query = this.value.trim();
+            
+            if (query.length < 3) {
+                document.getElementById('disambiguation').classList.remove('show');
+                return;
+            }
+            
+            searchTimeout = setTimeout(() => {
+                searchVenues(query);
+            }, 500);
+        });
+        
+        function searchVenues(query) {
+            // Try to get user's location for better results
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const location = new google.maps.LatLng(
+                            position.coords.latitude,
+                            position.coords.longitude
+                        );
+                        performSearch(query, location);
+                    },
+                    () => {
+                        // Fallback: search without location
+                        performSearch(query, null);
+                    }
+                );
+            } else {
+                performSearch(query, null);
+            }
+        }
+        
+        function performSearch(query, location) {
+            const request = {
+                input: query,
+                types: ['establishment']
+            };
+            
+            if (location) {
+                request.location = location;
+                request.radius = 50000; // 50km radius
+            }
+            
+            autocompleteService.getPlacePredictions(request, (predictions, status) => {
+                if (status === google.maps.places.PlacesServiceStatus.OK && predictions) {
+                    displayDisambiguation(predictions);
+                } else {
+                    document.getElementById('disambiguation').classList.remove('show');
+                }
+            });
+        }
+        
+        function displayDisambiguation(predictions) {
+            const container = document.getElementById('disambiguation');
+            container.innerHTML = '';
+            
+            predictions.forEach(prediction => {
+                const option = document.createElement('div');
+                option.className = 'venue-option';
+                
+                const name = document.createElement('div');
+                name.className = 'venue-option-name';
+                name.textContent = prediction.structured_formatting.main_text;
+                
+                const address = document.createElement('div');
+                address.className = 'venue-option-address';
+                address.textContent = prediction.structured_formatting.secondary_text || '';
+                
+                option.appendChild(name);
+                option.appendChild(address);
+                
+                option.addEventListener('click', () => {
+                    selectVenue(prediction.place_id);
+                    container.classList.remove('show');
+                });
+                
+                container.appendChild(option);
+            });
+            
+            container.classList.add('show');
+        }
+        
+        function selectVenue(placeId) {
+            const request = {
+                placeId: placeId,
+                fields: ['name', 'formatted_address', 'geometry', 'address_components', 'types']
+            };
+            
+            placesService.getDetails(request, (place, status) => {
+                if (status === google.maps.places.PlacesServiceStatus.OK) {
+                    selectedPlace = parsePlace(place);
+                    displaySelectedVenue(selectedPlace);
+                }
+            });
+        }
+        
+        function parsePlace(place) {
+            const addressComponents = {};
+            place.address_components.forEach(component => {
+                component.types.forEach(type => {
+                    addressComponents[type] = component.long_name;
+                });
+            });
+            
+            // Determine venue type
+            let venueType = 'Other';
+            if (place.types.includes('restaurant') || place.types.includes('food')) {
+                venueType = 'Restaurant';
+            } else if (place.types.includes('lodging')) {
+                venueType = 'Hotel';
+            } else if (place.types.includes('bar') || place.types.includes('night_club')) {
+                venueType = 'Bar/Pub';
+            } else if (place.types.includes('museum') || place.types.includes('art_gallery')) {
+                venueType = 'Cultural';
+            } else if (place.types.includes('park')) {
+                venueType = 'Outdoor';
+            } else if (place.types.includes('store') || place.types.includes('shopping_mall')) {
+                venueType = 'Shopping';
+            }
+            
+            return {
+                venue_name: place.name,
+                latitude: place.geometry.location.lat(),
+                longitude: place.geometry.location.lng(),
+                street_address: `${addressComponents.street_number || ''} ${addressComponents.route || ''}`.trim(),
+                city: addressComponents.locality || addressComponents.postal_town || '',
+                state: addressComponents.administrative_area_level_1 || '',
+                postal_code: addressComponents.postal_code || '',
+                country: addressComponents.country || '',
+                country_code: addressComponents.country_code || '',
+                full_address: place.formatted_address,
+                venue_type: venueType,
+                venue_id: place.place_id
+            };
+        }
+        
+        function displaySelectedVenue(place) {
+            document.getElementById('venueName').textContent = place.venue_name;
+            document.getElementById('venueAddress').textContent = place.full_address;
+            document.getElementById('selectedVenue').style.display = 'block';
+            document.getElementById('venueSearch').value = place.venue_name;
+        }
+        
+        // Form submission
+        document.getElementById('checkinForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            if (!selectedPlace) {
+                alert('Please select a venue from the search results');
+                return;
+            }
+            
+            const checkin = {
+                ...selectedPlace,
+                checkin_id: 'new_' + Date.now(),
+                date: document.getElementById('checkinDate').value.split('T')[0],
+                time: document.getElementById('checkinDate').value.split('T')[1] + ':00',
+                year: parseInt(document.getElementById('checkinDate').value.split('-')[0]),
+                month: parseInt(document.getElementById('checkinDate').value.split('-')[1]),
+                notes: document.getElementById('notes').value,
+                is_private: document.getElementById('isPrivate').checked,
+                foursquare_url: '',
+                created_date: new Date().toISOString()
+            };
+            
+            saveCheckin(checkin);
+        });
+        
+        function saveCheckin(checkin) {
+            // Get existing checkins from localStorage
+            let newCheckins = JSON.parse(localStorage.getItem('newCheckins') || '[]');
+            newCheckins.push(checkin);
+            localStorage.setItem('newCheckins', JSON.stringify(newCheckins));
+            
+            // Show success message
+            const successMsg = document.getElementById('successMessage');
+            successMsg.classList.add('show');
+            setTimeout(() => {
+                successMsg.classList.remove('show');
+            }, 3000);
+            
+            // Reset form
+            document.getElementById('checkinForm').reset();
+            document.getElementById('selectedVenue').style.display = 'none';
+            selectedPlace = null;
+            
+            // Reset date to now
+            const now = new Date();
+            now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+            document.getElementById('checkinDate').value = now.toISOString().slice(0, 16);
+            
+            // Update count
+            updateSavedCount();
+        }
+        
+        function updateSavedCount() {
+            const newCheckins = JSON.parse(localStorage.getItem('newCheckins') || '[]');
+            document.getElementById('savedCount').textContent = newCheckins.length;
+        }
+        
+        function exportNewCheckins() {
+            const newCheckins = JSON.parse(localStorage.getItem('newCheckins') || '[]');
+            
+            if (newCheckins.length === 0) {
+                alert('No new checkins to export');
+                return;
+            }
+            
+            // Convert to CSV
+            const headers = [
+                'checkin_id', 'venue_name', 'venue_type', 'date', 'time', 'year', 'month',
+                'latitude', 'longitude', 'street_address', 'city', 'state',
+                'postal_code', 'country', 'country_code', 'full_address', 
+                'foursquare_url', 'venue_id', 'notes', 'is_private'
+            ];
+            
+            let csv = headers.join(',') + '\n';
+            
+            newCheckins.forEach(checkin => {
+                const row = headers.map(header => {
+                    let value = checkin[header] || '';
+                    // Escape quotes and wrap in quotes if contains comma
+                    if (typeof value === 'string' && (value.includes(',') || value.includes('"') || value.includes('\n'))) {
+                        value = '"' + value.replace(/"/g, '""') + '"';
+                    }
+                    return value;
+                });
+                csv += row.join(',') + '\n';
+            });
+            
+            // Download CSV
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `new_checkins_${new Date().toISOString().split('T')[0]}.csv`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            window.URL.revokeObjectURL(url);
+            
+            // Ask if want to clear
+            if (confirm(`Exported ${newCheckins.length} checkin(s). Clear saved checkins?`)) {
+                localStorage.removeItem('newCheckins');
+                updateSavedCount();
+            }
+        }
+    </script>
+</body>
+</html>
