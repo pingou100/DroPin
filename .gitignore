@@ -1,2 +1,6 @@
 dropin-public/
 .~lock.*#
+
+# Configuration with real API keys
+config.js
+src/config.js
