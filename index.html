@@ -36,7 +36,8 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            z-index: 1002;
+            z-index: 10000;
+            isolation: isolate;
         }
         
         .nav-links {
@@ -83,10 +84,54 @@
         .export-btn {
             color: #007aff;
             margin-left: 4px;
+            position: relative;
         }
         
         .export-btn:hover {
             background: rgba(0, 122, 255, 0.06);
+        }
+        
+        .export-menu {
+            position: absolute;
+            top: 100%;
+            right: 16px;
+            margin-top: 4px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+            overflow: hidden;
+            display: none;
+            min-width: 140px;
+            z-index: 10001;
+        }
+        
+        .export-menu.show {
+            display: block;
+        }
+        
+        .export-menu button {
+            width: 100%;
+            padding: 11px 16px;
+            background: white;
+            border: none;
+            border-bottom: 1px solid #f5f5f7;
+            font-size: 13px;
+            color: #1d1d1f;
+            cursor: pointer;
+            text-align: left;
+            transition: background 0.15s;
+        }
+        
+        .export-menu button:last-child {
+            border-bottom: none;
+        }
+        
+        .export-menu button:hover {
+            background: #f5f5f7;
+        }
+        
+        .export-menu button:active {
+            background: #e5e5e7;
         }
         
         @media (max-width: 480px) {
@@ -393,9 +438,14 @@
                 <span>Add</span>
             </a>
         </div>
-        <button class="export-btn" onclick="exportAllCheckins()">
+        <button class="export-btn" onclick="showExportMenu(event)">
             <span class="nav-icon">↓</span>
         </button>
+        
+        <div id="exportMenu" class="export-menu">
+            <button onclick="exportAllCheckins()">Export All</button>
+            <button onclick="exportNewCheckins()">Export New Only</button>
+        </div>
     </nav>
     
     <div class="search-container">
@@ -690,15 +740,15 @@
             
             return `
                 <div class="popup-venue">${venueName}</div>
-                <div class="popup-detail">📍 ${city}, ${country}</div>
-                <div class="popup-detail">📅 ${date} ${time}</div>
-                <div class="popup-detail">🏷️ ${venueType}</div>
+                <div class="popup-detail">⊙ ${city}, ${country}</div>
+                <div class="popup-detail">◷ ${date} ${time}</div>
+                <div class="popup-detail">◇ ${venueType}</div>
                 <div class="popup-buttons">
                     <a href="${googleMapsUrl}" target="_blank" class="popup-btn maps-btn">
-                        <span>🗺️</span> Maps
+                        Maps
                     </a>
                     <button class="popup-btn" onclick='window.shareCheckin(${checkinJson})'>
-                        <span>↗</span> Share
+                        Share
                     </button>
                 </div>
             `;
@@ -914,14 +964,30 @@ Google Maps: ${googleMapsUrl}`;
             }
         });
         
+        // Export menu toggle
+        function showExportMenu(event) {
+            event.stopPropagation();
+            const menu = document.getElementById('exportMenu');
+            menu.classList.toggle('show');
+        }
+        
+        // Close export menu when clicking outside
+        document.addEventListener('click', function(e) {
+            const menu = document.getElementById('exportMenu');
+            if (!e.target.closest('.export-btn') && !e.target.closest('.export-menu')) {
+                menu.classList.remove('show');
+            }
+        });
+        
         // Export all checkins function
         function exportAllCheckins() {
+            document.getElementById('exportMenu').classList.remove('show');
+            
             if (!allCheckins || allCheckins.length === 0) {
                 alert('No checkins loaded yet');
                 return;
             }
             
-            // Export current CSV data
             const headers = [
                 'checkin_id', 'venue_name', 'venue_type', 'date', 'time', 'year', 'month',
                 'latitude', 'longitude', 'street_address', 'city', 'state',
@@ -942,11 +1008,58 @@ Google Maps: ${googleMapsUrl}`;
                 csv += row.join(',') + '\n';
             });
             
-            const blob = new Blob([csv], { type: 'text/csv' });
+            downloadCSV(csv, `all_checkins_${new Date().toISOString().split('T')[0]}.csv`);
+            
+            // Update last export timestamp
+            localStorage.setItem('lastExportDate', new Date().toISOString());
+        }
+        
+        // Export new checkins only (from localStorage)
+        function exportNewCheckins() {
+            document.getElementById('exportMenu').classList.remove('show');
+            
+            const newCheckins = JSON.parse(localStorage.getItem('newCheckins') || '[]');
+            
+            if (newCheckins.length === 0) {
+                alert('No new checkins to export');
+                return;
+            }
+            
+            const headers = [
+                'checkin_id', 'venue_name', 'venue_type', 'date', 'time', 'year', 'month',
+                'latitude', 'longitude', 'street_address', 'city', 'state',
+                'postal_code', 'country', 'country_code', 'full_address', 
+                'foursquare_url', 'venue_id', 'notes', 'is_private'
+            ];
+            
+            let csv = headers.join(',') + '\n';
+            
+            newCheckins.forEach(checkin => {
+                const row = headers.map(header => {
+                    let value = checkin[header] || '';
+                    if (typeof value === 'string' && (value.includes(',') || value.includes('"') || value.includes('\n'))) {
+                        value = '"' + value.replace(/"/g, '""') + '"';
+                    }
+                    return value;
+                });
+                csv += row.join(',') + '\n';
+            });
+            
+            downloadCSV(csv, `new_checkins_${new Date().toISOString().split('T')[0]}.csv`);
+            
+            if (confirm(`Exported ${newCheckins.length} new checkin(s). Clear from storage?`)) {
+                localStorage.removeItem('newCheckins');
+                showToast('New checkins cleared');
+            }
+        }
+        
+        // Helper function to download CSV
+        function downloadCSV(csvContent, filename) {
+            const blob = new Blob([csvContent], { type: 'text/csv' });
             const url = window.URL.createObjectURL(blob);
             const a = document.createElement('a');
             a.href = url;
-            a.download = `all_checkins_${new Date().toISOString().split('T')[0]}.csv`;
+            a.download = filename;
             document.body.appendChild(a);
             a.click();
             document.body.removeChild(a);
