@@ -192,67 +192,70 @@
         }
         
         .leaflet-popup-content-wrapper {
-            border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            border-radius: 14px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
         }
         
         .leaflet-popup-content {
             margin: 16px;
             font-size: 14px;
             line-height: 1.5;
-            min-width: 250px;
+            min-width: 240px;
         }
         
         .popup-venue {
             font-size: 16px;
             font-weight: 600;
             color: #1d1d1f;
-            margin-bottom: 8px;
+            margin-bottom: 10px;
+            letter-spacing: -0.2px;
         }
         
         .popup-detail {
             font-size: 13px;
-            color: #86868b;
-            margin-bottom: 4px;
+            color: #8e8e93;
+            margin-bottom: 6px;
+            line-height: 1.4;
         }
         
         .popup-buttons {
             display: flex;
             gap: 8px;
-            margin-top: 12px;
+            margin-top: 14px;
         }
         
-        .copy-btn {
+        .popup-btn {
             flex: 1;
-            padding: 8px 12px;
+            padding: 9px 14px;
             background: #007aff;
             color: white;
             border: none;
             border-radius: 8px;
-            font-size: 12px;
+            font-size: 13px;
             font-weight: 500;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: all 0.15s ease;
             text-decoration: none;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 4px;
+            -webkit-tap-highlight-color: transparent;
         }
         
-        .copy-btn:active {
+        .popup-btn:hover {
             background: #0051d5;
         }
         
-        .copy-btn.copied {
+        .popup-btn:active {
+            transform: scale(0.96);
+        }
+        
+        .popup-btn.maps-btn {
             background: #34c759;
         }
         
-        .maps-btn {
-            background: #34c759;
-        }
-        
-        .maps-btn:active {
+        .popup-btn.maps-btn:hover {
             background: #248a3d;
         }
         
@@ -682,16 +685,21 @@
             const venueType = escapeHtml(checkin.venue_type || 'Other');
             const googleMapsUrl = getGoogleMapsUrl(checkin);
             
+            // Store checkin data for share function
+            const checkinJson = JSON.stringify(checkin).replace(/'/g, "&#39;");
+            
             return `
                 <div class="popup-venue">${venueName}</div>
                 <div class="popup-detail">📍 ${city}, ${country}</div>
                 <div class="popup-detail">📅 ${date} ${time}</div>
                 <div class="popup-detail">🏷️ ${venueType}</div>
                 <div class="popup-buttons">
-                    <a href="${googleMapsUrl}" target="_blank" class="copy-btn maps-btn">
-                        🗺️ Google Maps
+                    <a href="${googleMapsUrl}" target="_blank" class="popup-btn maps-btn">
+                        <span>🗺️</span> Maps
                     </a>
-                    <button class="copy-btn" onclick='window.copyFullDetailsFromPopup(${JSON.stringify(checkin)})'>Copy All</button>
+                    <button class="popup-btn" onclick='window.shareCheckin(${checkinJson})'>
+                        <span>↗</span> Share
+                    </button>
                 </div>
             `;
         }
@@ -703,58 +711,64 @@
             return div.innerHTML;
         }
         
-        // Copy function - make it global
-        window.copyFullDetailsFromPopup = function(checkin) {
-            copyFullDetails(checkin);
-        };
-        
-        function copyFullDetails(checkin) {
+        // Share function - make it global
+        window.shareCheckin = async function(checkin) {
             const googleMapsUrl = getGoogleMapsUrl(checkin);
-            
             const text = `${checkin.venue_name}
-${checkin.full_address || 'Address not available'}
-Date: ${checkin.date} ${checkin.time}
-Type: ${checkin.venue_type}
+${checkin.full_address || checkin.city + ', ' + checkin.country}
+${checkin.date} ${checkin.time}
+${checkin.venue_type}
 GPS: ${checkin.latitude}, ${checkin.longitude}
 Google Maps: ${googleMapsUrl}`;
             
-            copyToClipboard(text);
-            showToast('Full details copied!');
-        }
-        
-        // Copy to clipboard helper
-        function copyToClipboard(text) {
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(text);
+            // iOS/Mobile: Use native share
+            if (navigator.share) {
+                try {
+                    await navigator.share({
+                        title: checkin.venue_name,
+                        text: text
+                    });
+                } catch (error) {
+                    // User cancelled or error - do nothing
+                    console.log('Share cancelled or failed:', error);
+                }
             } else {
-                // Fallback for older browsers/iOS
-                const textarea = document.createElement('textarea');
-                textarea.value = text;
-                textarea.style.position = 'fixed';
-                textarea.style.opacity = '0';
-                document.body.appendChild(textarea);
-                textarea.select();
-                document.execCommand('copy');
-                document.body.removeChild(textarea);
+                // Desktop: Copy to clipboard
+                try {
+                    await navigator.clipboard.writeText(text);
+                    showToast('Copied to clipboard!');
+                } catch (error) {
+                    console.error('Copy failed:', error);
+                    // Fallback
+                    const textarea = document.createElement('textarea');
+                    textarea.value = text;
+                    textarea.style.position = 'fixed';
+                    textarea.style.opacity = '0';
+                    document.body.appendChild(textarea);
+                    textarea.select();
+                    document.execCommand('copy');
+                    document.body.removeChild(textarea);
+                    showToast('Copied to clipboard!');
+                }
             }
-        }
+        };
         
-        // Show toast notification
         function showToast(message) {
             const toast = document.createElement('div');
             toast.textContent = message;
             toast.style.cssText = `
                 position: fixed;
-                top: 80px;
+                top: 70px;
                 left: 50%;
                 transform: translateX(-50%);
-                background: rgba(0, 0, 0, 0.8);
+                background: rgba(0, 0, 0, 0.85);
                 color: white;
-                padding: 12px 24px;
-                border-radius: 8px;
+                padding: 12px 20px;
+                border-radius: 10px;
                 font-size: 14px;
                 z-index: 10000;
                 pointer-events: none;
+                box-shadow: 0 4px 16px rgba(0,0,0,0.2);
             `;
             document.body.appendChild(toast);
             
