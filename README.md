@@ -20,10 +20,11 @@ Deploy in 5 minutes to Netlify (free), keep your data in a simple CSV file, and 
 - 🔍 **Smart Search & Filters** - Find venues by name, filter by country/type/year
 - 📤 **CSV Export** - Download all data or just new check-ins
 - 🎨 **Minimalist Design** - Clean, Apple-inspired interface
-- 📱 **Mobile-First** - Perfect experience on iOS and Android
+- 📱 **Mobile-First** - Perfect experience on iOS and Android with instant map updates
 - 🔒 **Privacy-Focused** - Your data stays yours (CSV files you control)
 - 🚀 **Zero Backend** - Just HTML/CSS/JS—deploy anywhere instantly
 - 💰 **Free Hosting** - Works on Netlify free tier
+- ⚡ **Real-time Updates** - New check-ins appear instantly on the map
 
 ---
 
@@ -123,9 +124,56 @@ DroPin is:
 
 ---
 
+## 🏗️ Architecture: CSV-First, Cloud-Optional
+
+DroPin uses a flexible **StorageAdapter** pattern that supports three modes:
+
+### **CSV Mode** (Default - Recommended)
+- ✅ **Pure static files** - CSV file is your database
+- ✅ **Zero dependencies** - No API calls, no external services
+- ✅ **Perfect for Netlify** - Just drag & drop deployment
+- ✅ **Instant map updates** - New check-ins appear immediately
+- ✅ **Export workflow** - Export All (CSV + new) or Export New Only
+- 📝 **New check-ins** stored in browser localStorage until you export
+
+### **PWA Mode** (Future)
+- Service Workers for offline capability
+- Background sync when connection restored
+- Progressive Web App installability
+
+### **Cloud Mode** (Future)
+- Firebase/Supabase integration for multi-device sync
+- Real-time updates across all your devices
+- Team/family sharing capabilities
+
+### How It Works
+
+```
+┌─────────────────────┐
+│   StorageAdapter    │  ← Single interface for all modes
+└──────────┬──────────┘
+           │
+    ┌──────┴──────┐
+    ▼             ▼
+┌─────────┐  ┌──────────┐
+│CSV Mode │  │PWA/Cloud │  ← Choose your mode
+└─────────┘  └──────────┘
+    │             │
+    ▼             ▼
+CSV File     IndexedDB + Sync
+```
+
+**Event-Driven Updates:**
+- When you add a check-in on `checkin-now.html`, it fires `checkin:added` event
+- The map on `index.html` listens for this event and updates instantly
+- Works seamlessly across browser tabs (same-origin only in CSV mode)
+
+---
+
 ## 🛠️ Technology Stack
 
 - **Frontend:** Vanilla JavaScript (no framework needed!)
+- **Architecture:** Modular ES6 with StorageAdapter pattern
 - **Maps:** [Leaflet.js](https://leafletjs.com/) with clustering
 - **Geocoding:** [Geoapify](https://www.geoapify.com/) (3,000 free requests/day)
 - **Places API:** [Google Places API (New)](https://developers.google.com/maps/documentation/places/web-service/overview)
@@ -155,6 +203,7 @@ DroPin is:
 | Beautiful UI | ✅ | ✅ | ✅ | ❌ |
 | Free hosting | ✅ | ✅ | ✅ | ❌ |
 | Setup time | 5 min | N/A | N/A | 2+ hrs |
+| Real-time updates | ✅ | ✅ | ✅ | ⚠️ |
 
 ---
 
@@ -182,6 +231,10 @@ DroPin is:
 
 ## 🗺️ Roadmap
 
+- [x] CSV-based storage with instant updates
+- [x] Export All / Export New functionality
+- [x] Event-driven architecture (StorageAdapter)
+- [x] Mobile map auto-refresh
 - [ ] Dark mode toggle
 - [ ] Heatmap visualization
 - [ ] Travel statistics dashboard (distance, countries, top cities)
