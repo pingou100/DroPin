@@ -41,22 +41,30 @@ Deploy in 5 minutes to Netlify (free), choose between simple CSV mode or bulletp
 
 <div align="center">
 
-### Interactive Global Map
-Beautiful visualization of all your check-ins with color-coded clustering and smooth zoom animations.
+### World Map with Clustering
+<img src="docs/screenshots/map-global.png" width="600" alt="Global map view showing check-ins across continents"/>
 
-### Location-Based Quick Check-in
-Instant check-in finds nearby venues sorted by distance—perfect for mobile use.
+*Visualize your travels with color-coded clustering and smooth zoom*
 
-### Manual Pin Placement
-Drag the map to position the pin exactly where you want, with automatic address geocoding.
+### Regional View with Filters
+<img src="docs/screenshots/map-europe.png" width="600" alt="Map zoomed to Europe showing individual pins"/>
 
-### Filter & Search
-Find check-ins by venue name, filter by country, venue type, or year—all with instant results.
+*Filter by country, venue type, or year to explore your history*
 
-### PWA Triple Redundancy
-Auto-backup to Google Drive every 5 check-ins. Your data is safe even if you lose your device.
+### Check-in Popup with Share
+<img src="docs/screenshots/popup.png" width="600" alt="Check-in detail popup with Maps and Share buttons"/>
 
-> **Note:** Screenshots coming soon! The app is fully functional—these visuals will showcase the interface and features.
+*Tap any pin to see details—share via iOS native sheet or copy*
+
+### Quick Check-in (Location-based)
+<img src="docs/screenshots/quick-checkin.png" width="600" alt="Nearby venues list with distances"/>
+
+*Instant check-in: finds nearby venues sorted by distance*
+
+### Manual Add with Pin Placement
+<img src="docs/screenshots/manual-add.png" width="600" alt="Interactive map with draggable pin"/>
+
+*Drag the map to position pin—auto-geocodes address*
 
 </div>
 
