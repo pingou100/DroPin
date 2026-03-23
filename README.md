@@ -37,6 +37,31 @@ Deploy in 5 minutes to Netlify (free), choose between simple CSV mode or bulletp
 
 ---
 
+## 📸 Screenshots
+
+<div align="center">
+
+### Interactive Global Map
+Beautiful visualization of all your check-ins with color-coded clustering and smooth zoom animations.
+
+### Location-Based Quick Check-in
+Instant check-in finds nearby venues sorted by distance—perfect for mobile use.
+
+### Manual Pin Placement
+Drag the map to position the pin exactly where you want, with automatic address geocoding.
+
+### Filter & Search
+Find check-ins by venue name, filter by country, venue type, or year—all with instant results.
+
+### PWA Triple Redundancy
+Auto-backup to Google Drive every 5 check-ins. Your data is safe even if you lose your device.
+
+> **Note:** Screenshots coming soon! The app is fully functional—these visuals will showcase the interface and features.
+
+</div>
+
+---
+
 ## 🚀 Quick Start
 
 ### Option 1: Simple CSV Mode (5 minutes)
