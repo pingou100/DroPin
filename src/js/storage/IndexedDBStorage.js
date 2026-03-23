@@ -3,11 +3,11 @@
  * 
  * Features:
  * - Offline-first with IndexedDB
- * - Auto-sync to CSV in background
- * - Service Worker integration
+ * - Fast local queries with indexes
  * - Instant map updates (no CSV reimport needed)
+ * - Auto-export to CSV for backup
  * 
- * This is the "advanced" mode for single-device offline use.
+ * This is Layer 1 of the PWA Triple Redundancy System.
  */
 
 class IndexedDBStorage {
@@ -16,13 +16,9 @@ class IndexedDBStorage {
         this.dbName = 'DroPin';
         this.version = 1;
         this.db = null;
-        this.autoExportThreshold = 100; // Auto-export CSV every N checkins
+        this.autoExportThreshold = 100;
     }
     
-    /**
-     * Open IndexedDB connection
-     * @returns {Promise<IDBDatabase>}
-     */
     async openDB() {
         if (this.db) return this.db;
         
@@ -38,11 +34,8 @@ class IndexedDBStorage {
             request.onupgradeneeded = (event) => {
                 const db = event.target.result;
                 
-                // Create checkins store
                 if (!db.objectStoreNames.contains('checkins')) {
                     const store = db.createObjectStore('checkins', { keyPath: 'checkin_id' });
-                    
-                    // Indexes for efficient querying
                     store.createIndex('country', 'country', { unique: false });
                     store.createIndex('venue_type', 'venue_type', { unique: false });
                     store.createIndex('year', 'year', { unique: false });
@@ -56,20 +49,13 @@ class IndexedDBStorage {
         });
     }
     
-    /**
-     * Save a new checkin
-     * @param {Object} checkin - Checkin data
-     * @returns {Promise<Object>} Saved checkin
-     */
     async save(checkin) {
         const db = await this.openDB();
         
-        // Generate ID if not present
         if (!checkin.checkin_id) {
             checkin.checkin_id = `checkin_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         }
         
-        // Add timestamp
         if (!checkin.date) {
             const now = new Date();
             checkin.date = now.toISOString().split('T')[0];
@@ -78,7 +64,6 @@ class IndexedDBStorage {
             checkin.month = (now.getMonth() + 1).toString();
         }
         
-        // Mark as new (not yet exported)
         checkin.is_new = true;
         checkin.created_at = new Date().toISOString();
         
@@ -90,8 +75,6 @@ class IndexedDBStorage {
             request.onsuccess = () => {
                 console.log('[IndexedDB] Saved checkin:', checkin.venue_name);
                 resolve(checkin);
-                
-                // Schedule CSV export if threshold reached
                 this.scheduleCSVExport();
             };
             
@@ -99,11 +82,6 @@ class IndexedDBStorage {
         });
     }
     
-    /**
-     * Query checkins with filters
-     * @param {Object} filters - {country, type, year, search}
-     * @returns {Promise<Array>} Filtered checkins
-     */
     async query(filters = {}) {
         const db = await this.openDB();
         
@@ -115,7 +93,6 @@ class IndexedDBStorage {
             request.onsuccess = () => {
                 let results = request.result;
                 
-                // Apply filters
                 if (filters.country && filters.country !== 'all') {
                     results = results.filter(c => c.country === filters.country);
                 }
@@ -144,10 +121,6 @@ class IndexedDBStorage {
         });
     }
     
-    /**
-     * Get all checkins
-     * @returns {Promise<Array>} All checkins
-     */
     async getAll() {
         const db = await this.openDB();
         
@@ -161,20 +134,11 @@ class IndexedDBStorage {
         });
     }
     
-    /**
-     * Get new checkins only (not yet exported)
-     * @returns {Promise<Array>} New checkins
-     */
     async getNew() {
         const all = await this.getAll();
         return all.filter(c => c.is_new === true);
     }
     
-    /**
-     * Get checkin by ID
-     * @param {string} id - Checkin ID
-     * @returns {Promise<Object|null>} Checkin or null
-     */
     async getById(id) {
         const db = await this.openDB();
         
@@ -188,12 +152,6 @@ class IndexedDBStorage {
         });
     }
     
-    /**
-     * Update a checkin
-     * @param {string} id - Checkin ID
-     * @param {Object} updates - Fields to update
-     * @returns {Promise<Object>} Updated checkin
-     */
     async update(id, updates) {
         const db = await this.openDB();
         const existing = await this.getById(id);
@@ -218,11 +176,6 @@ class IndexedDBStorage {
         });
     }
     
-    /**
-     * Delete a checkin
-     * @param {string} id - Checkin ID
-     * @returns {Promise<void>}
-     */
     async delete(id) {
         const db = await this.openDB();
         
@@ -240,11 +193,6 @@ class IndexedDBStorage {
         });
     }
     
-    /**
-     * Import bulk checkins
-     * @param {Array} checkins - Array of checkin objects
-     * @returns {Promise<void>}
-     */
     async importBulk(checkins) {
         const db = await this.openDB();
         
@@ -254,7 +202,6 @@ class IndexedDBStorage {
             
             let count = 0;
             checkins.forEach(checkin => {
-                // Mark as not new (already existed)
                 checkin.is_new = false;
                 store.put(checkin);
                 count++;
@@ -269,10 +216,6 @@ class IndexedDBStorage {
         });
     }
     
-    /**
-     * Mark new checkins as exported
-     * @returns {Promise<void>}
-     */
     async markAsExported() {
         const newCheckins = await this.getNew();
         const db = await this.openDB();
@@ -296,18 +239,12 @@ class IndexedDBStorage {
         });
     }
     
-    /**
-     * Schedule CSV export (background sync)
-     * @returns {Promise<void>}
-     */
     async scheduleCSVExport() {
         const newCount = (await this.getNew()).length;
         
-        // Auto-export if threshold reached
         if (newCount >= this.autoExportThreshold) {
             console.log(`[IndexedDB] Auto-export threshold reached (${newCount}/${this.autoExportThreshold})`);
             
-            // Try to use Background Sync API if available
             if ('serviceWorker' in navigator && 'sync' in ServiceWorkerRegistration.prototype) {
                 try {
                     const registration = await navigator.serviceWorker.ready;
