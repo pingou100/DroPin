@@ -44,11 +44,44 @@ class SafePWAStorage {
         this.autoBackupInterval = config.AUTO_BACKUP_INTERVAL || 5;
         this.backupFolderName = config.BACKUP_FOLDER_NAME || 'DroPin Backups';
         
-        // Counter for auto-backup
-        this.checkinsCounter = 0;
+        // Counter for auto-backup (now persisted in localStorage)
+        this.backupCounterKey = 'gdrive_backup_counter';
+        this.checkinsCounter = this.loadBackupCounter();
         this.initPromise = null;
         
-        console.log(`[SafePWA] Initialized with auto-backup every ${this.autoBackupInterval} check-ins`);
+        console.log(`[SafePWA] Initialized with auto-backup every ${this.autoBackupInterval} check-ins (current: ${this.checkinsCounter})`);
+    }
+    
+    /**
+     * Load backup counter from localStorage (persists across page reloads)
+     */
+    loadBackupCounter() {
+        try {
+            const saved = localStorage.getItem(this.backupCounterKey);
+            return saved ? parseInt(saved, 10) : 0;
+        } catch (error) {
+            console.error('[SafePWA] Failed to load backup counter:', error);
+            return 0;
+        }
+    }
+    
+    /**
+     * Save backup counter to localStorage
+     */
+    saveBackupCounter() {
+        try {
+            localStorage.setItem(this.backupCounterKey, this.checkinsCounter.toString());
+        } catch (error) {
+            console.error('[SafePWA] Failed to save backup counter:', error);
+        }
+    }
+    
+    /**
+     * Reset backup counter (after successful backup)
+     */
+    resetBackupCounter() {
+        this.checkinsCounter = 0;
+        this.saveBackupCounter();
     }
     
     async initialize() {
@@ -136,11 +169,14 @@ class SafePWAStorage {
             console.log('[SafePWA] ✓ Layer 2: localStorage backed up');
             
             this.checkinsCounter++;
+            this.saveBackupCounter(); // Persist counter immediately
+            
+            console.log(`[SafePWA] Backup counter: ${this.checkinsCounter}/${this.autoBackupInterval}`);
+            
             if (this.checkinsCounter >= this.autoBackupInterval) {
                 this.autoBackupToGoogleDrive().catch(err => {
                     console.warn('[SafePWA] Background backup failed:', err);
                 });
-                this.checkinsCounter = 0;
             }
             
             return checkin;
@@ -164,7 +200,13 @@ class SafePWAStorage {
     
     async autoBackupToGoogleDrive() {
         const setupStatus = localStorage.getItem('gdrive_setup_complete');
-        if (setupStatus === 'declined') return;
+        
+        if (setupStatus === 'declined') {
+            console.log('[SafePWA] Google Drive backup skipped (user declined)');
+            // Reset counter even if declined, to avoid accumulation
+            this.resetBackupCounter();
+            return;
+        }
         
         try {
             console.log('[SafePWA] Starting Google Drive backup...');
@@ -172,10 +214,15 @@ class SafePWAStorage {
             const csv = this.generateCSV(allCheckins);
             await this.googleDrive.uploadBackup(csv);
             await this.markAsBackedUp();
+            
+            // Reset counter after successful backup
+            this.resetBackupCounter();
+            
             console.log(`[SafePWA] ✓ Layer 3: Google Drive backup complete (${allCheckins.length} check-ins)`);
             this.showToast(`☁️ Backed up to Google Drive (${allCheckins.length} check-ins)`);
         } catch (error) {
             console.error('[SafePWA] Google Drive backup failed:', error);
+            // Don't reset counter on failure - will retry on next check-in
         }
     }
     
