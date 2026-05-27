@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Travel Statistics - DroPin</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif; background: #f5f5f7; padding-bottom: 40px; }
+        .nav-menu { position: fixed; top: 0; left: 0; right: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); padding: 10px 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); display: flex; justify-content: space-between; align-items: center; z-index: 10000; }
+        .nav-links { display: flex; gap: 2px; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .nav-link { padding: 8px 12px; background: transparent; color: #8e8e93; text-decoration: none; border-radius: 8px; font-size: 13px; font-weight: 500; transition: all 0.15s ease; display: flex; align-items: center; gap: 5px; white-space: nowrap; -webkit-tap-highlight-color: transparent; }
+        .nav-link:hover { background: rgba(0,0,0,0.04); color: #1d1d1f; }
+        .nav-link.active { background: rgba(0,122,255,0.08); color: #007aff; }
+        .nav-icon { font-size: 15px; line-height: 1; }
+        @media (max-width: 480px) { .nav-link { font-size: 12px; padding: 7px 10px; gap: 4px; } }
+        .container { max-width: 1200px; margin: 70px auto 20px; padding: 0 16px; }
+        .page-title { font-size: 28px; font-weight: 700; color: #1d1d1f; margin-bottom: 8px; letter-spacing: -0.5px; }
+        .page-subtitle { font-size: 15px; color: #86868b; margin-bottom: 24px; }
+        .hero-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .hero-card { background: white; border-radius: 14px; padding: 24px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); text-align: center; }
+        .hero-value { font-size: 48px; font-weight: 700; color: #007aff; margin-bottom: 8px; line-height: 1; }
+        .hero-label { font-size: 14px; color: #86868b; font-weight: 500; }
+        .card { background: white; border-radius: 14px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+        .card-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #f5f5f7; }
+        .card-header h2 { font-size: 18px; font-weight: 600; color: #1d1d1f; }
+        .back-btn { padding: 6px 12px; background: #f5f5f7; color: #007aff; border: none; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; }
+        .back-btn:hover { background: #e5e5e7; }
+        #statsMap { height: 400px; border-radius: 10px; overflow: hidden; }
+        .chart-container { position: relative; min-height: 150px; }
+        .city-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 12px; }
+        .city-item { padding: 12px 16px; background: #f5f5f7; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; transition: all 0.15s; }
+        .city-item:hover { background: #e5e5e7; transform: translateY(-1px); }
+        .city-name { font-size: 14px; font-weight: 500; color: #1d1d1f; }
+        .city-country { font-size: 12px; color: #86868b; }
+        .city-count { font-size: 16px; font-weight: 600; color: #007aff; }
+        .distance-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+        .distance-item { padding: 16px; background: #f5f5f7; border-radius: 10px; }
+        .distance-label { font-size: 12px; color: #86868b; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .distance-value { font-size: 18px; font-weight: 600; color: #1d1d1f; margin-bottom: 4px; }
+        .distance-detail { font-size: 13px; color: #86868b; }
+        .loading { text-align: center; padding: 40px; color: #86868b; }
+        .show-more-btn { width: 100%; padding: 12px; background: #f5f5f7; border: none; border-radius: 10px; font-size: 14px; font-weight: 500; color: #007aff; cursor: pointer; margin-top: 12px; transition: all 0.15s; }
+        .show-more-btn:hover { background: #e5e5e7; }
+        .hidden { display: none; }
+        @media (max-width: 768px) { .hero-cards { grid-template-columns: 1fr; } #statsMap { height: 300px; } .distance-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <nav class="nav-menu">
+        <div class="nav-links">
+            <a href="index.html" class="nav-link"><span class="nav-icon">○</span><span>Map</span></a>
+            <a href="checkin-now.html" class="nav-link"><span class="nav-icon">⊕</span><span>Check in</span></a>
+            <a href="add-checkin.html" class="nav-link"><span class="nav-icon">✎</span><span>Add</span></a>
+            <a href="stats.html" class="nav-link active"><span class="nav-icon">◈</span><span>Stats</span></a>
+            <a href="import-export.html" class="nav-link"><span class="nav-icon">⇅</span><span>Import/Export</span></a>
+            <a href="sync.html" class="nav-link"><span class="nav-icon">☁</span><span>Sync</span></a>
+        </div>
+    </nav>
+    
+    <div class="container">
+        <div class="page-title">Travel Statistics</div>
+        <div class="page-subtitle">Your geographic travel insights</div>
+        
+        <div class="hero-cards">
+            <div class="hero-card"><div class="hero-value" id="totalCountries">-</div><div class="hero-label">Countries</div></div>
+            <div class="hero-card"><div class="hero-value" id="totalCities">-</div><div class="hero-label">Cities</div></div>
+            <div class="hero-card"><div class="hero-value" id="totalCheckins">-</div><div class="hero-label">Check-ins</div></div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h2 id="mapTitle">World Map</h2>
+                <button class="back-btn hidden" id="backBtn">← Back to World</button>
+            </div>
+            <div id="statsMap"></div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header"><h2>Top 10 Countries</h2></div>
+            <div class="chart-container"><canvas id="countryChart"></canvas></div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header"><h2 id="citiesTitle">Top 20 Cities</h2></div>
+            <div id="citiesList" class="city-list"></div>
+            <button class="show-more-btn hidden" id="showMoreCities">Show All Cities</button>
+        </div>
+        
+        <div class="card">
+            <div class="card-header"><h2>Distance & Travel Patterns</h2></div>
+            <div class="distance-grid" id="distanceStats"></div>
+        </div>
+    </div>
+    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="./config.js"></script>
+    
+    <script type="module">
+        import StorageAdapter from './js/storage/StorageAdapter.js';
+        import { GeoStatsCalculator } from './js/stats/GeoStatsCalculator.js';
+        import { WorldMapViz } from './js/stats/WorldMapViz.js';
+        import { CountryChart } from './js/stats/CountryChart.js';
+        
+        const storage = new StorageAdapter(null, window.CONFIG);
+        await storage.initialize();
+        
+        let stats = null;
+        const worldMap = new WorldMapViz('statsMap');
+        const countryChart = new CountryChart('countryChart');
+        await worldMap.initialize();
+        
+        async function loadStats() {
+            try {
+                const checkins = await storage.backend.getAll();
+                if (checkins.length === 0) {
+                    document.querySelector('.container').innerHTML = `<div class="loading"><div style="font-size:48px;margin-bottom:16px">📍</div><div style="font-size:18px;color:#1d1d1f;margin-bottom:8px">No Check-ins Yet</div><div style="font-size:14px;color:#86868b">Start checking in to see your travel statistics!</div><a href="checkin-now.html" style="display:inline-block;margin-top:20px;padding:12px 24px;background:#007aff;color:white;border-radius:10px;text-decoration:none">Check In Now</a></div>`;
+                    return;
+                }
+                stats = new GeoStatsCalculator(checkins).calculate();
+                document.getElementById('totalCountries').textContent = stats.overview.totalCountries;
+                document.getElementById('totalCities').textContent = stats.overview.totalCities;
+                document.getElementById('totalCheckins').textContent = stats.overview.totalCheckins;
+                await worldMap.render(stats.countries.all, onCountryClick);
+                countryChart.render(stats.countries.top10, onCountryClick);
+                renderCities(stats.cities.top20.slice(0, 10));
+                if (stats.cities.top20.length > 10) document.getElementById('showMoreCities').classList.remove('hidden');
+                renderDistanceStats(stats.distances);
+            } catch (error) {
+                console.error('[Stats] Error:', error);
+                alert('Error loading statistics: ' + error.message);
+            }
+        }
+        
+        function renderCities(cities) {
+            const container = document.getElementById('citiesList');
+            container.innerHTML = '';
+            cities.forEach(city => {
+                const div = document.createElement('div');
+                div.className = 'city-item';
+                div.innerHTML = `<div><div class="city-name">${city.city}</div><div class="city-country">${city.country}</div></div><div class="city-count">${city.count}</div>`;
+                div.addEventListener('click', () => worldMap.centerOn(city.lat, city.lng, 12));
+                container.appendChild(div);
+            });
+        }
+        
+        function renderDistanceStats(distances) {
+            const container = document.getElementById('distanceStats');
+            container.innerHTML = '';
+            if (distances.furthestFromHome) {
+                const f = distances.furthestFromHome;
+                container.innerHTML += `<div class="distance-item"><div class="distance-label">Furthest from Home</div><div class="distance-value">${f.distanceFormatted}</div><div class="distance-detail">${f.venue}, ${f.city}, ${f.country}</div></div>`;
+            }
+            if (distances.averageDistance > 0) {
+                container.innerHTML += `<div class="distance-item"><div class="distance-label">Average Journey</div><div class="distance-value">${distances.averageDistanceFormatted}</div><div class="distance-detail">Between consecutive check-ins</div></div>`;
+            }
+            if (distances.longestJourney) {
+                const l = distances.longestJourney;
+                container.innerHTML += `<div class="distance-item"><div class="distance-label">Longest Single-Day Journey</div><div class="distance-value">${l.distanceFormatted}</div><div class="distance-detail">${l.from.city} → ${l.to.city} (${l.date})</div></div>`;
+            }
+        }
+        
+        function onCountryClick(country) {
+            document.getElementById('mapTitle').textContent = country.name;
+            document.getElementById('backBtn').classList.remove('hidden');
+            document.getElementById('citiesTitle').textContent = `Cities in ${country.name}`;
+            worldMap.zoomToCountry(country.name);
+            const countryCities = stats.cities.all.filter(c => c.country === country.name);
+            renderCities(countryCities.slice(0, 10));
+            const showMoreBtn = document.getElementById('showMoreCities');
+            if (countryCities.length > 10) {
+                showMoreBtn.classList.remove('hidden');
+                showMoreBtn.onclick = () => { renderCities(countryCities); showMoreBtn.classList.add('hidden'); };
+            } else {
+                showMoreBtn.classList.add('hidden');
+            }
+        }
+        
+        document.getElementById('backBtn').addEventListener('click', () => {
+            document.getElementById('mapTitle').textContent = 'World Map';
+            document.getElementById('backBtn').classList.add('hidden');
+            document.getElementById('citiesTitle').textContent = 'Top 20 Cities';
+            worldMap.resetZoom();
+            renderCities(stats.cities.top20.slice(0, 10));
+            const showMoreBtn = document.getElementById('showMoreCities');
+            if (stats.cities.top20.length > 10) {
+                showMoreBtn.classList.remove('hidden');
+                showMoreBtn.onclick = () => { renderCities(stats.cities.top20); showMoreBtn.classList.add('hidden'); };
+            }
+        });
+        
+        document.getElementById('showMoreCities').addEventListener('click', () => {
+            renderCities(stats.cities.top20);
+            document.getElementById('showMoreCities').classList.add('hidden');
+        });
+        
+        loadStats();
+    </script>
+</body>
+</html>

@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sync — DroPin</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f7; padding-bottom: 40px; }
+        .nav-menu { position: fixed; top: 0; left: 0; right: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); padding: 10px 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); display: flex; align-items: center; z-index: 1000; }
+        .nav-links { display: flex; gap: 2px; flex-wrap: nowrap; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+        .nav-link { padding: 8px 12px; background: transparent; color: #8e8e93; text-decoration: none; border-radius: 8px; font-size: 13px; font-weight: 500; border: none; cursor: pointer; transition: all 0.15s ease; display: flex; align-items: center; gap: 5px; white-space: nowrap; -webkit-tap-highlight-color: transparent; }
+        .nav-link:hover { background: rgba(0,0,0,0.04); color: #1d1d1f; }
+        .nav-link.active { background: rgba(0,122,255,0.08); color: #007aff; }
+        .nav-icon { font-size: 15px; line-height: 1; }
+        @media (max-width: 480px) { .nav-link { font-size: 12px; padding: 7px 10px; gap: 4px; } .nav-icon { font-size: 14px; } }
+        .container { max-width: 600px; margin: 70px auto 20px; padding: 0 16px; }
+        .page-title { font-size: 28px; font-weight: 700; color: #1d1d1f; margin-bottom: 6px; letter-spacing: -0.5px; }
+        .page-subtitle { font-size: 15px; color: #86868b; margin-bottom: 28px; line-height: 1.5; }
+        .status-bar { background: white; border-radius: 14px; padding: 16px 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; align-items: center; gap: 14px; }
+        .status-dot { width: 10px; height: 10px; border-radius: 50%; background: #c7c7cc; flex-shrink: 0; transition: background 0.3s; }
+        .status-dot.connected { background: #34c759; }
+        .status-dot.error { background: #ff3b30; }
+        .status-dot.pending { background: #ff9500; }
+        .status-text { flex: 1; }
+        .status-label { font-size: 14px; font-weight: 500; color: #1d1d1f; }
+        .status-sub { font-size: 12px; color: #86868b; margin-top: 2px; }
+        .connect-btn { padding: 8px 14px; background: #007aff; color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; white-space: nowrap; -webkit-tap-highlight-color: transparent; }
+        .connect-btn:active { opacity: 0.8; }
+        .connect-btn.secondary { background: #f5f5f7; color: #1d1d1f; }
+        .local-stats { background: white; border-radius: 14px; padding: 16px 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); display: flex; align-items: center; gap: 16px; }
+        .stat-block { text-align: center; flex: 1; }
+        .stat-num { font-size: 28px; font-weight: 700; color: #007aff; letter-spacing: -1px; }
+        .stat-lbl { font-size: 11px; color: #86868b; font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+        .stat-divider { width: 1px; height: 40px; background: #e5e5e7; }
+        .card { background: white; border-radius: 16px; padding: 20px; margin-bottom: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+        .card-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+        .card-icon { font-size: 28px; line-height: 1; }
+        .card-title-block { flex: 1; }
+        .card-title { font-size: 17px; font-weight: 600; color: #1d1d1f; letter-spacing: -0.3px; }
+        .card-desc { font-size: 13px; color: #86868b; margin-top: 4px; line-height: 1.4; }
+        .btn { width: 100%; padding: 14px 20px; border: none; border-radius: 12px; font-size: 15px; font-weight: 600; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 8px; -webkit-tap-highlight-color: transparent; margin-top: 14px; }
+        .btn:active { transform: scale(0.97); }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+        .btn-push { background: #007aff; color: white; }
+        .btn-push:hover:not(:disabled) { background: #0051d5; }
+        .btn-pull { background: #34c759; color: white; }
+        .btn-pull:hover:not(:disabled) { background: #248a3d; }
+        .btn-confirm { background: #34c759; color: white; }
+        .btn-cancel { background: #f5f5f7; color: #1d1d1f; margin-top: 8px; }
+        .progress-wrap { display: none; margin-top: 14px; }
+        .progress-wrap.show { display: block; }
+        .progress-track { height: 8px; background: #e5e5e7; border-radius: 4px; overflow: hidden; }
+        .progress-fill { height: 100%; background: #007aff; border-radius: 4px; width: 0%; transition: width 0.3s ease; }
+        .progress-fill.green { background: #34c759; }
+        .progress-label { font-size: 12px; color: #86868b; text-align: center; margin-top: 6px; }
+        .diff-box { display: none; background: #f5f5f7; border-radius: 12px; padding: 16px; margin-top: 14px; }
+        .diff-box.show { display: block; }
+        .diff-title { font-size: 13px; font-weight: 600; color: #1d1d1f; margin-bottom: 10px; }
+        .diff-row { display: flex; justify-content: space-between; align-items: center; padding: 6px 0; border-bottom: 1px solid #e5e5e7; font-size: 13px; }
+        .diff-row:last-child { border-bottom: none; }
+        .diff-key { color: #86868b; }
+        .diff-val { font-weight: 600; color: #1d1d1f; }
+        .diff-val.green { color: #34c759; }
+        .diff-val.blue { color: #007aff; }
+        .last-sync { font-size: 12px; color: #86868b; text-align: center; margin-top: 12px; }
+        .toast { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); color: white; padding: 12px 20px; border-radius: 12px; font-size: 14px; z-index: 9999; pointer-events: none; opacity: 0; transition: opacity 0.2s; white-space: nowrap; }
+        .toast.show { opacity: 1; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.4); border-top-color: white; border-radius: 50%; animation: spin 0.8s linear infinite; flex-shrink: 0; }
+    </style>
+</head>
+<body>
+
+<nav class="nav-menu">
+    <div class="nav-links">
+        <a href="index.html" class="nav-link"><span class="nav-icon">○</span><span>Map</span></a>
+        <a href="checkin-now.html" class="nav-link"><span class="nav-icon">⊕</span><span>Check in</span></a>
+        <a href="add-checkin.html" class="nav-link"><span class="nav-icon">✎</span><span>Add</span></a>
+        <a href="stats.html" class="nav-link"><span class="nav-icon">◈</span><span>Stats</span></a>
+        <a href="import-export.html" class="nav-link"><span class="nav-icon">⇅</span><span>Import/Export</span></a>
+        <a href="sync.html" class="nav-link active"><span class="nav-icon">☁</span><span>Sync</span></a>
+    </div>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<div class="container">
+    <div class="page-title">☁ Sync</div>
+    <div class="page-subtitle">Keep all your devices in sync via Google Drive. One master file, always up to date.</div>
+
+    <div class="status-bar">
+        <div class="status-dot" id="statusDot"></div>
+        <div class="status-text">
+            <div class="status-label" id="statusLabel">Not connected to Google Drive</div>
+            <div class="status-sub" id="statusSub"></div>
+        </div>
+        <button class="connect-btn" id="connectBtn" style="display:none" onclick="connectDrive()">Connect</button>
+        <button class="connect-btn secondary" id="disconnectBtn" style="display:none" onclick="disconnectDrive()">Disconnect</button>
+    </div>
+
+    <div class="local-stats">
+        <div class="stat-block"><div class="stat-num" id="localCount">…</div><div class="stat-lbl">This Device</div></div>
+        <div class="stat-divider"></div>
+        <div class="stat-block"><div class="stat-num" id="driveCount">…</div><div class="stat-lbl">On Drive</div></div>
+        <div class="stat-divider"></div>
+        <div class="stat-block"><div class="stat-num" id="lastSyncCount">…</div><div class="stat-lbl">Last Sync</div></div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-icon">⬆️</div>
+            <div class="card-title-block">
+                <div class="card-title">Push to Drive</div>
+                <div class="card-desc">Upload your local check-ins as the new master. Other devices can then Pull to get them.</div>
+            </div>
+        </div>
+        <button class="btn btn-push" id="pushBtn" disabled onclick="doPush()">Push to Google Drive</button>
+        <div class="progress-wrap" id="pushProgress">
+            <div class="progress-track"><div class="progress-fill" id="pushFill"></div></div>
+            <div class="progress-label" id="pushLabel">Preparing...</div>
+        </div>
+        <div class="last-sync" id="lastPushInfo"></div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <div class="card-icon">⬇️</div>
+            <div class="card-title-block">
+                <div class="card-title">Pull & Merge</div>
+                <div class="card-desc">Download the master from Drive and merge with local data. Only new check-ins are added — nothing is deleted.</div>
+            </div>
+        </div>
+        <button class="btn btn-pull" id="pullBtn" disabled onclick="startPull()">Pull from Google Drive</button>
+        <div class="progress-wrap" id="pullProgress">
+            <div class="progress-track"><div class="progress-fill green" id="pullFill"></div></div>
+            <div class="progress-label" id="pullLabel">Downloading...</div>
+        </div>
+        <div class="diff-box" id="diffBox">
+            <div class="diff-title">📊 Preview</div>
+            <div class="diff-row"><span class="diff-key">Drive has</span><span class="diff-val blue" id="driveTotalEl">0</span></div>
+            <div class="diff-row"><span class="diff-key">Local has</span><span class="diff-val" id="localTotalEl">0</span></div>
+            <div class="diff-row"><span class="diff-key">New to import</span><span class="diff-val green" id="newCountEl">0</span></div>
+            <div class="diff-row"><span class="diff-key">After merge</span><span class="diff-val" id="afterMergeEl">0</span></div>
+            <button class="btn btn-confirm" id="confirmMergeBtn" onclick="confirmMerge()">✓ Merge <span id="mergeCountLabel">0</span> new check-ins</button>
+            <button class="btn btn-cancel" onclick="cancelPull()">Cancel</button>
+        </div>
+        <div class="last-sync" id="lastPullInfo"></div>
+    </div>
+</div>
+
+<script src="./config.js"></script>
+<script type="module">
+import StorageAdapter from './js/storage/StorageAdapter.js';
+
+const MASTER_FILENAME = 'DroPin-Master.csv';
+const BACKUP_FOLDER_NAME = 'DroPin Backups';
+const CLIENT_ID = CONFIG.GOOGLE_DRIVE_CLIENT_ID;
+const SCOPE = 'https://www.googleapis.com/auth/drive';
+
+let accessToken = null, tokenExpiry = null, masterFileId = null, backupFolderId = null, pendingMergeData = null, allLocal = [];
+
+const storage = new StorageAdapter(null, window.CONFIG);
+await storage.initialize();
+
+function setStatus(dot, label, sub) { document.getElementById('statusDot').className = 'status-dot ' + dot; document.getElementById('statusLabel').textContent = label; document.getElementById('statusSub').textContent = sub || ''; }
+function showToast(msg, duration = 2500) { const t = document.getElementById('toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), duration); }
+function setProgress(id, pct, label) { document.getElementById(id + 'Fill').style.width = pct + '%'; document.getElementById(id + 'Label').textContent = label; }
+function fmtDate(iso) { if (!iso) return 'Never'; const d = new Date(iso); return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); }
+
+const CSV_HEADERS = ['checkin_id','venue_name','venue_type','date','time','year','month','latitude','longitude','street_address','city','state','postal_code','country','country_code','full_address','foursquare_url','venue_id','notes','is_private'];
+
+function toCSV(checkins) { let csv = CSV_HEADERS.join(',') + '\n'; checkins.forEach(c => { const row = CSV_HEADERS.map(h => { let v = c[h] != null ? String(c[h]) : ''; if (v.includes(',') || v.includes('"') || v.includes('\n')) v = '"' + v.replace(/"/g, '""') + '"'; return v; }); csv += row.join(',') + '\n'; }); return csv; }
+
+function parseCSV(text) { const lines = text.trim().split('\n'); if (lines.length < 2) return []; const headers = parseLine(lines[0]).map(h => h.trim()); const result = []; for (let i = 1; i < lines.length; i++) { const vals = parseLine(lines[i]); if (vals.length < 2) continue; const obj = {}; headers.forEach((h, idx) => { obj[h] = (vals[idx] || '').trim(); }); if (obj.checkin_id) result.push(obj); } return result; }
+function parseLine(line) { const out = []; let cur = ''; let q = false; for (let i = 0; i < line.length; i++) { const ch = line[i]; if (ch === '"') { q = !q; } else if (ch === ',' && !q) { out.push(cur); cur = ''; } else cur += ch; } out.push(cur); return out; }
+
+function loadToken() { const t = localStorage.getItem('sync_access_token'); const e = localStorage.getItem('sync_token_expiry'); if (t && e && Date.now() < parseInt(e) - 60000) { accessToken = t; tokenExpiry = parseInt(e); return true; } return false; }
+function saveToken(token, expiresIn) { accessToken = token; tokenExpiry = Date.now() + expiresIn * 1000; localStorage.setItem('sync_access_token', accessToken); localStorage.setItem('sync_token_expiry', tokenExpiry.toString()); }
+function clearToken() { accessToken = null; tokenExpiry = null; masterFileId = null; backupFolderId = null; localStorage.removeItem('sync_access_token'); localStorage.removeItem('sync_token_expiry'); localStorage.removeItem('sync_master_file_id'); localStorage.removeItem('sync_backup_folder_id'); }
+
+async function loadGIS() { if (window.google?.accounts?.oauth2) return; await new Promise((res, rej) => { const s = document.createElement('script'); s.src = 'https://accounts.google.com/gsi/client'; s.onload = res; s.onerror = rej; document.head.appendChild(s); }); }
+
+async function getToken() {
+    await loadGIS();
+    return new Promise(resolve => {
+        const client = google.accounts.oauth2.initTokenClient({
+            client_id: CLIENT_ID, scope: SCOPE,
+            callback: resp => { if (resp.error) { resolve(false); return; } saveToken(resp.access_token, resp.expires_in); resolve(true); },
+            error_callback: (err) => { console.error('GIS error:', err); resolve(false); }
+        });
+        const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        client.requestAccessToken({ prompt: isMobile ? 'consent' : '' });
+    });
+}
+
+async function ensureToken() { return !!(accessToken && Date.now() < tokenExpiry - 60000); }
+
+async function findBackupFolder() {
+    if (backupFolderId) return backupFolderId;
+    const cached = localStorage.getItem('sync_backup_folder_id');
+    if (cached) { backupFolderId = cached; return cached; }
+    const q = encodeURIComponent(`name='${BACKUP_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+    const r = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`, { headers: { Authorization: 'Bearer ' + accessToken } });
+    if (!r.ok) throw new Error('Folder search failed: ' + r.status);
+    const d = await r.json();
+    if (d.files && d.files.length > 0) { backupFolderId = d.files[0].id; localStorage.setItem('sync_backup_folder_id', backupFolderId); return backupFolderId; }
+    const cr = await fetch('https://www.googleapis.com/drive/v3/files?fields=id', { method: 'POST', headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': 'application/json' }, body: JSON.stringify({ name: BACKUP_FOLDER_NAME, mimeType: 'application/vnd.google-apps.folder' }) });
+    if (!cr.ok) throw new Error('Folder creation failed: ' + cr.status);
+    const cd = await cr.json(); backupFolderId = cd.id; localStorage.setItem('sync_backup_folder_id', backupFolderId); return backupFolderId;
+}
+
+async function findMasterFile() {
+    masterFileId = null;
+    const folderId = await findBackupFolder();
+    const q = encodeURIComponent(`name='${MASTER_FILENAME}' and '${folderId}' in parents and trashed=false`);
+    const r = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name,modifiedTime,size)`, { headers: { Authorization: 'Bearer ' + accessToken } });
+    if (!r.ok) throw new Error('Drive search failed: ' + r.status);
+    const d = await r.json();
+    if (d.files && d.files.length > 0) { masterFileId = d.files[0].id; return { id: masterFileId, ...d.files[0] }; }
+    return null;
+}
+
+async function getDriveMeta() {
+    if (!await ensureToken()) return null;
+    try { const info = await findMasterFile(); if (!info) return null; const r = await fetch(`https://www.googleapis.com/drive/v3/files/${masterFileId}?alt=media`, { headers: { Authorization: 'Bearer ' + accessToken } }); if (!r.ok) return null; const text = await r.text(); return { count: parseCSV(text).length, text }; } catch { return null; }
+}
+
+async function uploadMaster(csvText) {
+    const folderId = await findBackupFolder(); const fileInfo = await findMasterFile();
+    const boundary = 'dropin_sync_' + Date.now();
+    const metaObj = fileInfo ? { name: MASTER_FILENAME, mimeType: 'text/csv' } : { name: MASTER_FILENAME, mimeType: 'text/csv', parents: [folderId] };
+    const meta = JSON.stringify(metaObj);
+    const body = `--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${meta}\r\n--${boundary}\r\nContent-Type: text/csv\r\n\r\n${csvText}\r\n--${boundary}--`;
+    const url = fileInfo && masterFileId ? `https://www.googleapis.com/upload/drive/v3/files/${masterFileId}?uploadType=multipart&fields=id,modifiedTime` : 'https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,modifiedTime';
+    const r = await fetch(url, { method: fileInfo ? 'PATCH' : 'POST', headers: { Authorization: 'Bearer ' + accessToken, 'Content-Type': `multipart/related; boundary=${boundary}` }, body });
+    if (!r.ok) { const err = await r.json().catch(() => ({})); throw new Error(err.error?.message || 'Upload failed: ' + r.status); }
+    const result = await r.json(); masterFileId = result.id; return result;
+}
+
+async function refreshUI() {
+    allLocal = await storage.backend.getAll();
+    document.getElementById('localCount').textContent = allLocal.length;
+    const lastSync = localStorage.getItem('sync_last_date');
+    document.getElementById('lastSyncCount').textContent = lastSync ? fmtDate(lastSync).split(' ')[0] : '—';
+    document.getElementById('lastPushInfo').textContent = localStorage.getItem('sync_last_push') ? 'Last push: ' + fmtDate(localStorage.getItem('sync_last_push')) : '';
+    document.getElementById('lastPullInfo').textContent = localStorage.getItem('sync_last_pull') ? 'Last pull: ' + fmtDate(localStorage.getItem('sync_last_pull')) : '';
+    document.getElementById('driveCount').textContent = '…';
+    if (accessToken) { const meta = await getDriveMeta(); document.getElementById('driveCount').textContent = meta ? meta.count : '—'; } else { document.getElementById('driveCount').textContent = '—'; }
+}
+
+function enableButtons(connected) {
+    document.getElementById('pushBtn').disabled = !connected;
+    document.getElementById('pullBtn').disabled = !connected;
+    document.getElementById('connectBtn').style.display = connected ? 'none' : 'block';
+    document.getElementById('disconnectBtn').style.display = connected ? 'block' : 'none';
+}
+
+window.connectDrive = async function() { setStatus('pending', 'Signing in to Google...', ''); document.getElementById('connectBtn').disabled = true; const ok = await getToken(); if (ok) { setStatus('connected', 'Connected to Google Drive', 'Ready to sync'); enableButtons(true); await refreshUI(); showToast('✓ Connected!'); } else { setStatus('error', 'Sign-in failed', 'Tap Connect to try again'); document.getElementById('connectBtn').disabled = false; } };
+window.disconnectDrive = function() { clearToken(); setStatus('', 'Not connected', ''); enableButtons(false); document.getElementById('driveCount').textContent = '—'; showToast('Disconnected'); };
+
+window.doPush = async function() {
+    const btn = document.getElementById('pushBtn'); btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Pushing...';
+    const prog = document.getElementById('pushProgress'); prog.classList.add('show'); setProgress('push', 10, 'Loading local check-ins...');
+    try {
+        if (!await ensureToken()) throw new Error('Not connected — tap Connect first');
+        setProgress('push', 30, 'Generating CSV...'); allLocal = await storage.backend.getAll(); const csv = toCSV(allLocal);
+        setProgress('push', 60, 'Uploading to Google Drive...'); await uploadMaster(csv);
+        setProgress('push', 100, `✓ ${allLocal.length} check-ins pushed`); document.getElementById('pushFill').style.background = '#34c759';
+        const now = new Date().toISOString(); localStorage.setItem('sync_last_push', now); localStorage.setItem('sync_last_date', now);
+        showToast(`✓ Pushed ${allLocal.length} check-ins to Drive`); await refreshUI();
+        setTimeout(() => { prog.classList.remove('show'); document.getElementById('pushFill').style.background = ''; setProgress('push', 0, ''); }, 3000);
+    } catch (err) { setProgress('push', 0, ''); prog.classList.remove('show'); showToast('Push failed: ' + err.message, 4000); }
+    btn.disabled = false; btn.textContent = 'Push to Google Drive';
+};
+
+window.startPull = async function() {
+    const btn = document.getElementById('pullBtn'); btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Downloading...';
+    const prog = document.getElementById('pullProgress'); prog.classList.add('show'); setProgress('pull', 20, 'Connecting to Google Drive...');
+    try {
+        if (!await ensureToken()) throw new Error('Not connected — tap Connect first');
+        setProgress('pull', 40, 'Finding master file...'); const fileInfo = await findMasterFile();
+        if (!fileInfo) throw new Error('No DroPin-Master.csv found on Drive. Push from another device first.');
+        setProgress('pull', 70, 'Downloading...'); const r = await fetch(`https://www.googleapis.com/drive/v3/files/${masterFileId}?alt=media`, { headers: { Authorization: 'Bearer ' + accessToken } });
+        if (!r.ok) throw new Error('Download failed: ' + r.status); const text = await r.text();
+        setProgress('pull', 90, 'Analyzing differences...'); const driveCheckins = parseCSV(text); allLocal = await storage.backend.getAll();
+        const localIds = new Set(allLocal.map(c => c.checkin_id)); const newOnes = driveCheckins.filter(c => !localIds.has(c.checkin_id));
+        pendingMergeData = newOnes;
+        document.getElementById('driveTotalEl').textContent = driveCheckins.length; document.getElementById('localTotalEl').textContent = allLocal.length;
+        document.getElementById('newCountEl').textContent = newOnes.length; document.getElementById('afterMergeEl').textContent = allLocal.length + newOnes.length; document.getElementById('mergeCountLabel').textContent = newOnes.length;
+        document.getElementById('diffBox').classList.add('show'); setProgress('pull', 100, 'Review below and confirm');
+        if (newOnes.length === 0) { document.getElementById('confirmMergeBtn').disabled = true; document.getElementById('confirmMergeBtn').textContent = '✓ Already up to date'; }
+    } catch (err) { setProgress('pull', 0, ''); prog.classList.remove('show'); showToast('Pull failed: ' + err.message, 4000); btn.disabled = false; btn.textContent = 'Pull from Google Drive'; return; }
+    btn.disabled = false; btn.textContent = 'Pull from Google Drive';
+};
+
+window.confirmMerge = async function() {
+    if (!pendingMergeData || pendingMergeData.length === 0) { cancelPull(); return; }
+    const btn = document.getElementById('confirmMergeBtn'); btn.disabled = true; btn.innerHTML = '<div class="spinner"></div> Merging...';
+    try {
+        const batchSize = 100;
+        for (let i = 0; i < pendingMergeData.length; i += batchSize) { await storage.backend.importBulk(pendingMergeData.slice(i, i + batchSize)); setProgress('pull', Math.min(Math.round(((i + batchSize) / pendingMergeData.length) * 100), 100), `Importing... ${Math.min(i + batchSize, pendingMergeData.length)}/${pendingMergeData.length}`); }
+        const now = new Date().toISOString(); localStorage.setItem('sync_last_pull', now); localStorage.setItem('sync_last_date', now);
+        showToast(`✓ Merged ${pendingMergeData.length} new check-ins!`); pendingMergeData = null;
+        document.getElementById('diffBox').classList.remove('show'); document.getElementById('pullProgress').classList.remove('show'); setProgress('pull', 0, ''); await refreshUI();
+    } catch (err) { showToast('Merge failed: ' + err.message, 4000); btn.disabled = false; btn.textContent = '✓ Merge'; }
+};
+
+window.cancelPull = function() { pendingMergeData = null; document.getElementById('diffBox').classList.remove('show'); document.getElementById('pullProgress').classList.remove('show'); setProgress('pull', 0, ''); };
+
+async function init() {
+    const local = await storage.backend.getAll();
+    document.getElementById('localCount').textContent = local.length;
+    document.getElementById('driveCount').textContent = '—';
+    document.getElementById('lastSyncCount').textContent = '—';
+    document.getElementById('lastPushInfo').textContent = localStorage.getItem('sync_last_push') ? 'Last push: ' + fmtDate(localStorage.getItem('sync_last_push')) : '';
+    document.getElementById('lastPullInfo').textContent = localStorage.getItem('sync_last_pull') ? 'Last pull: ' + fmtDate(localStorage.getItem('sync_last_pull')) : '';
+    if (loadToken()) { setStatus('connected', 'Connected to Google Drive', 'Ready to sync'); enableButtons(true); const lastSync = localStorage.getItem('sync_last_date'); document.getElementById('lastSyncCount').textContent = lastSync ? fmtDate(lastSync).split(' ')[0] : '—'; }
+    else { setStatus('', 'Not connected to Google Drive', 'Tap Connect to sign in'); enableButtons(false); }
+}
+
+init();
+</script>
+</body>
+</html>

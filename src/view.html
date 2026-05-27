@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DroPin — Travel Map</title>
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+    
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f7; }
+        .topbar { position: fixed; top: 0; left: 0; right: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); padding: 10px 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); display: flex; align-items: center; gap: 12px; z-index: 10000; }
+        .topbar-title { font-size: 15px; font-weight: 600; color: #1d1d1f; letter-spacing: -0.3px; white-space: nowrap; }
+        .topbar-badge { font-size: 12px; color: #8e8e93; background: #f5f5f7; padding: 3px 8px; border-radius: 20px; white-space: nowrap; }
+        .topbar-badge strong { color: #007aff; }
+        .search-container { position: fixed; top: 60px; left: 12px; right: 12px; max-width: 420px; z-index: 999; }
+        .search-wrap { position: relative; }
+        .search-icon { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); font-size: 15px; pointer-events: none; }
+        .search-box { width: 100%; padding: 11px 36px 11px 38px; border: 1px solid #e5e5e7; border-radius: 10px; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); box-shadow: 0 2px 8px rgba(0,0,0,0.06); font-size: 14px; color: #1d1d1f; outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
+        .search-box:focus { border-color: #007aff; box-shadow: 0 2px 12px rgba(0,122,255,0.15); }
+        .search-clear { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: #c7c7cc; color: white; border: none; border-radius: 50%; width: 18px; height: 18px; font-size: 11px; cursor: pointer; display: none; align-items: center; justify-content: center; line-height: 1; }
+        .search-clear.show { display: flex; }
+        .search-results { position: absolute; top: 48px; left: 0; right: 0; background: white; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.15); max-height: 280px; overflow-y: auto; display: none; }
+        .search-results.show { display: block; }
+        .search-result-item { padding: 11px 16px; border-bottom: 1px solid #f5f5f7; cursor: pointer; transition: background 0.15s; }
+        .search-result-item:last-child { border-bottom: none; }
+        .search-result-item:hover { background: #f5f5f7; }
+        .sri-name { font-size: 14px; font-weight: 500; color: #1d1d1f; margin-bottom: 1px; }
+        .sri-sub { font-size: 12px; color: #86868b; }
+        .search-count { padding: 7px 16px; font-size: 12px; color: #86868b; background: #f5f5f7; border-bottom: 1px solid #e5e5e7; }
+        #map { position: absolute; top: 48px; left: 0; right: 0; bottom: 60px; width: 100%; }
+        .controls { position: fixed; bottom: 0; left: 0; right: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); padding: 10px 12px; box-shadow: 0 -1px 3px rgba(0,0,0,0.06); display: flex; gap: 8px; overflow-x: auto; -webkit-overflow-scrolling: touch; z-index: 1000; }
+        .controls select { padding: 8px 12px; border: 1px solid #e5e5e7; border-radius: 8px; background: white; font-size: 13px; color: #1d1d1f; min-width: 110px; cursor: pointer; }
+        .year-container { display: flex; flex-direction: column; gap: 4px; min-width: 150px; }
+        .year-container label { font-size: 12px; color: #86868b; text-align: center; }
+        input[type="range"] { -webkit-appearance: none; appearance: none; width: 100%; height: 4px; border-radius: 2px; background: #d1d1d6; outline: none; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: #007aff; cursor: pointer; }
+        .leaflet-popup-content-wrapper { border-radius: 14px; box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+        .leaflet-popup-content { margin: 16px; font-size: 14px; line-height: 1.5; min-width: 220px; }
+        .popup-venue { font-size: 16px; font-weight: 600; color: #1d1d1f; margin-bottom: 8px; letter-spacing: -0.2px; }
+        .popup-detail { font-size: 13px; color: #8e8e93; margin-bottom: 5px; line-height: 1.4; }
+        .popup-buttons { display: flex; gap: 8px; margin-top: 12px; }
+        .popup-btn { flex: 1; padding: 9px 12px; border: none; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; text-decoration: none; display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; transition: opacity 0.15s; }
+        .popup-btn:active { opacity: 0.7; }
+        .maps-btn { background: #34c759; color: white; }
+        .share-btn { background: #007aff; color: white; }
+        .readonly-banner { position: fixed; bottom: 70px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.6); color: white; font-size: 11px; padding: 5px 12px; border-radius: 20px; z-index: 999; pointer-events: none; white-space: nowrap; }
+        @media (max-width: 600px) { .controls { flex-direction: column; } .controls select, .year-container { width: 100%; } }
+    </style>
+</head>
+<body>
+
+<div class="topbar">
+    <div class="topbar-title">✈️ Travel Map</div>
+    <div class="topbar-badge">Showing <strong id="visibleCount">0</strong> of <strong id="totalCount">0</strong></div>
+</div>
+
+<div class="search-container">
+    <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="searchBox" class="search-box" placeholder="Search pins or fly to any city...">
+        <button class="search-clear" id="searchClear">✕</button>
+    </div>
+    <div id="searchResults" class="search-results"></div>
+</div>
+
+<div id="map"></div>
+<div class="readonly-banner">👀 View only — no editing</div>
+
+<div class="controls">
+    <select id="countryFilter"><option value="all">All Countries</option></select>
+    <select id="typeFilter"><option value="all">All Types</option></select>
+    <div class="year-container">
+        <label id="yearLabel">Year: All</label>
+        <input type="range" id="yearSlider" min="2014" max="2027" value="2027">
+    </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+<script>
+/*
+ * view.html — Read-only shareable map
+ * 
+ * Reads from checkins_with_addresses.csv in the same directory.
+ * No authentication, no editing, no check-in capability.
+ * Share this URL with friends/family for a read-only view of your travels.
+ */
+
+async function loadCSV() {
+    const resp = await fetch('./checkins_with_addresses.csv');
+    const text = await resp.text();
+    const lines = text.trim().split('\n');
+    if (lines.length < 2) return [];
+    const headers = parseCSVLine(lines[0]);
+    return lines.slice(1).map(line => {
+        const values = parseCSVLine(line);
+        const obj = {};
+        headers.forEach((h, i) => { obj[h.trim()] = (values[i] || '').trim(); });
+        return obj;
+    }).filter(r => r.latitude && r.longitude);
+}
+
+function parseCSVLine(line) {
+    const result = []; let current = ''; let inQuotes = false;
+    for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') { inQuotes = !inQuotes; }
+        else if (ch === ',' && !inQuotes) { result.push(current); current = ''; }
+        else { current += ch; }
+    }
+    result.push(current);
+    return result;
+}
+
+const map = L.map('map', { center: [50.8503, 4.3517], zoom: 6, zoomControl: true });
+map.zoomControl.setPosition('topright');
+L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', { attribution: '&copy; OpenStreetMap contributors &copy; CARTO', maxZoom: 19 }).addTo(map);
+
+let allCheckins = [], searchQuery = '', searchTimeout = null;
+let markers = L.markerClusterGroup({ chunkedLoading: true, spiderfyOnMaxZoom: true, showCoverageOnHover: false, zoomToBoundsOnClick: true, maxClusterRadius: 50 });
+
+const searchBoxEl = document.getElementById('searchBox');
+const searchResultsEl = document.getElementById('searchResults');
+const searchClearEl = document.getElementById('searchClear');
+
+searchBoxEl.addEventListener('input', function() {
+    clearTimeout(searchTimeout);
+    const query = this.value.trim();
+    searchClearEl.classList.toggle('show', query.length > 0);
+    if (!query) { searchQuery = ''; searchResultsEl.classList.remove('show'); searchResultsEl.innerHTML = ''; updateMap(); return; }
+    searchTimeout = setTimeout(() => handleSearch(query), 300);
+});
+searchClearEl.addEventListener('click', () => { searchBoxEl.value = ''; searchQuery = ''; searchClearEl.classList.remove('show'); searchResultsEl.classList.remove('show'); searchResultsEl.innerHTML = ''; updateMap(); });
+searchBoxEl.addEventListener('keydown', e => { if (e.key === 'Escape') searchClearEl.click(); });
+document.addEventListener('click', e => { if (!e.target.closest('.search-container')) searchResultsEl.classList.remove('show'); });
+
+async function handleSearch(query) {
+    const lq = query.toLowerCase();
+    const matching = allCheckins.filter(c => (c.venue_name||'').toLowerCase().includes(lq) || (c.city||'').toLowerCase().includes(lq) || (c.country||'').toLowerCase().includes(lq));
+    searchResultsEl.innerHTML = '';
+    if (matching.length > 0) {
+        searchQuery = query; updateMap();
+        const countDiv = document.createElement('div'); countDiv.className = 'search-count'; countDiv.textContent = `${matching.length} check-in${matching.length !== 1 ? 's' : ''} found`; searchResultsEl.appendChild(countDiv);
+        matching.slice(0, 8).forEach(c => {
+            const item = document.createElement('div'); item.className = 'search-result-item';
+            item.innerHTML = `<div class="sri-name">${esc(c.venue_name||'')}</div><div class="sri-sub">${esc(c.city||'')}${c.city && c.country ? ', ' : ''}${esc(c.country||'')}</div>`;
+            item.addEventListener('click', () => { const lat = parseFloat(c.latitude), lng = parseFloat(c.longitude); if (!isNaN(lat) && !isNaN(lng)) { map.setView([lat, lng], 15); markers.eachLayer(m => { if (m.checkinData && m.checkinData.venue_name === c.venue_name && m.checkinData.date === c.date) setTimeout(() => m.openPopup(), 300); }); } searchResultsEl.classList.remove('show'); searchBoxEl.value = c.venue_name; });
+            searchResultsEl.appendChild(item);
+        });
+        const geoItem = document.createElement('div'); geoItem.className = 'search-result-item';
+        geoItem.innerHTML = `<div class="sri-name" style="color:#007aff">🌍 Fly to "${esc(query)}" on map</div><div class="sri-sub">Search worldwide locations</div>`;
+        geoItem.addEventListener('click', () => geocodeAndFly(query)); searchResultsEl.appendChild(geoItem);
+        searchResultsEl.classList.add('show');
+    } else {
+        searchQuery = ''; updateMap();
+        const loadItem = document.createElement('div'); loadItem.className = 'search-result-item'; loadItem.innerHTML = `<div class="sri-name">🌍 Searching for "${esc(query)}"...</div>`; searchResultsEl.appendChild(loadItem); searchResultsEl.classList.add('show');
+        await geocodeAndFly(query, false);
+    }
+}
+
+async function geocodeAndFly(query, hideResults = true) {
+    try {
+        const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5`, { headers: { 'Accept-Language': 'en' } });
+        const results = await resp.json();
+        if (hideResults) searchResultsEl.classList.remove('show');
+        if (!results.length) { searchResultsEl.innerHTML = `<div class="search-result-item"><div class="sri-name">No location found for "${esc(query)}"</div></div>`; searchResultsEl.classList.add('show'); return; }
+        if (results.length === 1 || hideResults) { map.setView([parseFloat(results[0].lat), parseFloat(results[0].lon)], 13); searchResultsEl.classList.remove('show'); }
+        else {
+            searchResultsEl.innerHTML = '';
+            results.forEach(r => { const item = document.createElement('div'); item.className = 'search-result-item'; const parts = r.display_name.split(','); item.innerHTML = `<div class="sri-name">📍 ${esc(parts[0])}</div><div class="sri-sub">${esc(parts.slice(1,3).join(',').trim())}</div>`; item.addEventListener('click', () => { map.setView([parseFloat(r.lat), parseFloat(r.lon)], 13); searchResultsEl.classList.remove('show'); }); searchResultsEl.appendChild(item); });
+            searchResultsEl.classList.add('show');
+        }
+    } catch(err) { console.error('Geocode error:', err); }
+}
+
+function updateMap() {
+    const country = document.getElementById('countryFilter').value, type = document.getElementById('typeFilter').value, yearVal = parseInt(document.getElementById('yearSlider').value);
+    markers.clearLayers();
+    const filtered = allCheckins.filter(c => {
+        if (country !== 'all' && c.country !== country) return false;
+        if (type !== 'all' && c.venue_type !== type) return false;
+        if (yearVal < 2027 && parseInt(c.year) !== yearVal) return false;
+        if (searchQuery) { const q = searchQuery.toLowerCase(); if (!(c.venue_name||'').toLowerCase().includes(q) && !(c.city||'').toLowerCase().includes(q) && !(c.country||'').toLowerCase().includes(q)) return false; }
+        return true;
+    });
+    filtered.forEach(c => { const lat = parseFloat(c.latitude), lng = parseFloat(c.longitude); if (isNaN(lat) || isNaN(lng)) return; const m = L.marker([lat, lng]); m.checkinData = c; m.bindPopup(createPopup(c), { maxWidth: 280 }); markers.addLayer(m); });
+    map.addLayer(markers);
+    document.getElementById('visibleCount').textContent = filtered.length;
+}
+
+function createPopup(c) {
+    const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(c.venue_name||'')}/@${c.latitude},${c.longitude},17z`;
+    const shareData = JSON.stringify(c).replace(/'/g, "&#39;");
+    return `<div class="popup-venue">${esc(c.venue_name||'Unknown')}</div><div class="popup-detail">⊙ ${esc(c.city||'')}, ${esc(c.country||'')}</div><div class="popup-detail">◷ ${esc(c.date||'')} ${esc(c.time||'')}</div><div class="popup-detail">◇ ${esc(c.venue_type||'Other')}</div><div class="popup-buttons"><a href="${mapsUrl}" target="_blank" class="popup-btn maps-btn">Maps</a><button class="popup-btn share-btn" onclick='sharePin(${shareData})'>Share</button></div>`;
+}
+
+function esc(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+
+window.sharePin = async function(c) {
+    const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(c.venue_name||'')}/@${c.latitude},${c.longitude},17z`;
+    const text = `${c.venue_name}\n${c.full_address||c.city+', '+c.country}\n${c.date} ${c.time}\nMaps: ${mapsUrl}`;
+    if (navigator.share) { try { await navigator.share({ title: c.venue_name, text }); } catch(e) {} }
+    else { try { await navigator.clipboard.writeText(text); } catch(e) {} showToast('Copied!'); }
+};
+
+function showToast(msg) { const t = document.createElement('div'); t.textContent = msg; t.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:white;padding:10px 18px;border-radius:10px;font-size:13px;z-index:9999;'; document.body.appendChild(t); setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); }, 2000); }
+
+async function init() {
+    allCheckins = await loadCSV();
+    const countries = [...new Set(allCheckins.map(c=>c.country).filter(Boolean))].sort();
+    const types = [...new Set(allCheckins.map(c=>c.venue_type).filter(Boolean))].sort();
+    const cf = document.getElementById('countryFilter'); countries.forEach(c => { const o=document.createElement('option'); o.value=c; o.textContent=c; cf.appendChild(o); });
+    const tf = document.getElementById('typeFilter'); types.forEach(t => { const o=document.createElement('option'); o.value=t; o.textContent=t; tf.appendChild(o); });
+    document.getElementById('totalCount').textContent = allCheckins.length;
+    updateMap();
+    if (allCheckins.length > 0) { const bounds = L.latLngBounds(); allCheckins.forEach(c => { const lat = parseFloat(c.latitude), lng = parseFloat(c.longitude); if (!isNaN(lat) && !isNaN(lng)) bounds.extend([lat, lng]); }); if (bounds.isValid()) map.fitBounds(bounds, { padding: [60, 60] }); }
+}
+
+document.getElementById('countryFilter').addEventListener('change', updateMap);
+document.getElementById('typeFilter').addEventListener('change', updateMap);
+document.getElementById('yearSlider').addEventListener('input', function() { const y = parseInt(this.value); document.getElementById('yearLabel').textContent = y >= 2027 ? 'Year: All' : `Year: ${y}`; updateMap(); });
+
+init();
+</script>
+</body>
+</html>

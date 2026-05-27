@@ -1,6 +1,6 @@
 # DroPin
 
-> **Self-hosted travel check-in tracker with triple redundancy. Beautiful, privacy-first, works on any device. No backend needed.**
+> **Self-hosted travel check-in tracker. Beautiful, privacy-first, works on any device. No backend needed.**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 [![Netlify](https://img.shields.io/badge/deploy-netlify-00C7B7)](https://www.netlify.com/)
@@ -8,338 +8,235 @@
 
 When Foursquare shut down their Swarm API, millions of check-ins became trapped in a closed ecosystem. DroPin is the open-source alternative: a beautifully designed, privacy-focused check-in tracker you own and control.
 
-Deploy in 5 minutes to Netlify (free), choose between simple CSV mode or bulletproof PWA mode with Google Drive backup. No backend, no database, no tracking—just your travel memories, beautifully visualized and safely stored.
+Deploy in 5 minutes to Netlify (free). No backend, no database, no tracking — just your travel memories, beautifully visualized and safely synced across devices.
 
 ---
 
 ## ✨ Features
 
-### Core Features
-- 🗺️ **Interactive Global Map** - Visualize all check-ins with clustering and smooth animations
-- ⚡ **Quick Check-in** - Location-based check-in finds nearby venues instantly  
-- 📍 **Manual Entry** - Drag-to-position pin placement with auto-geocoding
-- 🔍 **Smart Search & Filters** - Find venues by name, filter by country/type/year
-- 🎨 **Minimalist Design** - Clean, Apple-inspired interface
-- 📱 **Mobile-First** - Perfect experience on iOS and Android
+### Core
+- 🗺️ **Interactive Global Map** — Visualize all check-ins with clustering and smooth animations
+- ⚡ **Quick Check-in** — Location-based check-in finds nearby venues instantly via Google Places API
+- 📍 **Manual Entry** — Drag-to-position pin placement with auto-geocoding
+- 🔍 **Smart Search** — Search pins by name/city, or fly to any city worldwide via Nominatim geocoding
+- 🎨 **Minimalist Design** — Clean, Apple-inspired interface
+- 📱 **Mobile-First** — Fully tested on iOS Safari and Android Chrome
 
-### Storage Modes
-- 📁 **CSV Mode** - Simple, static files (great for getting started)
-- 🛡️ **PWA Mode** - Triple redundancy: IndexedDB + localStorage + Google Drive
-- ☁️ **Auto-Backup** - Google Drive uploads every 5 check-ins
-- 💾 **Offline-First** - Works without internet (PWA mode)
-- 🔄 **Auto-Recovery** - Restores data if browser cache cleared
+### Storage & Sync
+- 🛡️ **PWA Mode** — Triple redundancy: IndexedDB + localStorage + Google Drive auto-backup
+- ☁️ **Cross-device Sync** — Push/Pull your master CSV via Google Drive, merge without data loss
+- 📁 **CSV Mode** — Simple static file mode, great for getting started
+- 💾 **Offline-First** — Works without internet in PWA mode
+- 🔄 **Auto-Recovery** — Restores data from localStorage if IndexedDB is wiped
+
+### Stats & Sharing
+- 📊 **Travel Statistics** — Choropleth world map, top countries chart, city rankings, distance insights
+- 👀 **Read-only Sharing** — Share `view.html` with family/friends for a public map (no editing)
+- 📤 **Export/Import** — Full CSV export, import from any CSV source including Foursquare exports
 
 ### Privacy & Control
-- 🔒 **Privacy-Focused** - Your data stays yours
-- 🚀 **Zero Backend** - Just HTML/CSS/JS—deploy anywhere
-- 💰 **Free Hosting** - Works on Netlify free tier
-- 🔐 **No Tracking** - Zero analytics, no cookies
-
----
-
-## 📸 Screenshots
-
-<div align="center">
-
-### World Map with Clustering
-<img src="docs/screenshots/map-global.png" width="600" alt="Global map view showing check-ins across continents"/>
-
-*Visualize your travels with color-coded clustering and smooth zoom*
-
-### Regional View with Filters
-<img src="docs/screenshots/map-europe.png" width="600" alt="Map zoomed to Europe showing individual pins"/>
-
-*Filter by country, venue type, or year to explore your history*
-
-### Check-in Popup with Share
-<img src="docs/screenshots/popup.png" width="600" alt="Check-in detail popup with Maps and Share buttons"/>
-
-*Tap any pin to see details—share via iOS native sheet or copy*
-
-### Quick Check-in (Location-based)
-<img src="docs/screenshots/quick-checkin.png" width="600" alt="Nearby venues list with distances"/>
-
-*Instant check-in: finds nearby venues sorted by distance*
-
-### Manual Add with Pin Placement
-<img src="docs/screenshots/manual-add.png" width="600" alt="Interactive map with draggable pin"/>
-
-*Drag the map to position pin—auto-geocodes address*
-
-</div>
+- 🔒 **Your data, your storage** — Everything stays in your browser + your Google Drive
+- 🚀 **Zero Backend** — Pure HTML/CSS/JS, deploy on any static host
+- 💰 **Free Hosting** — Netlify free tier is more than enough
+- 🔐 **No Tracking** — Zero analytics, no cookies, no third-party data collection
 
 ---
 
 ## 🚀 Quick Start
 
-### Option 1: Simple CSV Mode (5 minutes)
+### Option 1: CSV Mode (5 minutes)
 
-Perfect for getting started quickly:
+The simplest setup — reads check-ins from a static CSV file:
 
 ```bash
-# Clone and configure
 git clone https://github.com/pingou100/DroPin.git
-cd DroPin
-cp src/config.example.js src/config.js
-# Edit config.js with your API keys
-
-# Deploy to Netlify
-# Drag src/ folder to https://app.netlify.com/drop
+cd DroPin/src
+cp config.example.js config.js
+# Edit config.js: set STORAGE_MODE to 'csv' and add your API keys
 ```
 
-### Option 2: PWA Mode with Triple Redundancy (10 minutes)
+Then drag the `src/` folder to [Netlify Drop](https://app.netlify.com/drop).
 
-For bulletproof data safety with Google Drive backup:
+### Option 2: PWA Mode with Sync (10 minutes)
 
-1. **Follow CSV setup above**, then:
-2. **Create Google OAuth Client** at [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
-   - Type: Web application
-   - Authorized JavaScript origins: `https://your-domain.com`
-   - Authorized redirect URIs: `https://your-domain.com/oauth2callback`
-3. **Enable PWA mode in config.js:**
-   ```javascript
-   window.CONFIG = {
-       STORAGE_MODE: 'pwa',  // Enable triple redundancy
-       GOOGLE_DRIVE_CLIENT_ID: 'your_client_id.apps.googleusercontent.com',
-       AUTO_BACKUP_INTERVAL: 5,  // Backup every 5 check-ins
-       // ... other config
-   };
-   ```
-4. **Deploy and connect Google Drive** when prompted on first check-in
+Full check-in app with Google Drive sync across all your devices:
+
+1. Clone and configure as above, but set `STORAGE_MODE: 'pwa'` in config.js
+2. Create a **Google OAuth 2.0 Client ID** at [Google Cloud Console](https://console.cloud.google.com/apis/credentials):
+   - Application type: **Web application**
+   - Authorized JavaScript origins: `https://your-netlify-domain.netlify.app`
+   - Authorized redirect URIs: (none needed — we use implicit flow)
+3. Enable the **Google Drive API** in your project
+4. Add your `GOOGLE_DRIVE_CLIENT_ID` to config.js
+5. Deploy to Netlify
+
+**Important:** The sync feature requires the `https://www.googleapis.com/auth/drive` scope so that files pushed from one device can be read by another. The old `drive.file` scope will not work for cross-device sync.
 
 ---
 
-## 🛡️ PWA Triple Redundancy System
+## 📱 Pages
 
-**NEW!** PWA mode protects your data with three independent backup layers:
-
-### Architecture
-
-```
-Every check-in is saved to:
-┌─────────────────────────────────────┐
-│  Layer 1: IndexedDB                 │  ← Primary (50MB+, offline)
-│  ✓ Fast, instant access             │
-│  ⚠️ Risk: Cleared with browser data │
-└─────────────────────────────────────┘
-           ↓
-┌─────────────────────────────────────┐
-│  Layer 2: localStorage              │  ← Backup (last 200 check-ins)
-│  ✓ Survives most cache clears       │
-│  ⚠️ Risk: Cleared with browser data │
-└─────────────────────────────────────┘
-           ↓
-┌─────────────────────────────────────┐
-│  Layer 3: Google Drive              │  ← Permanent (unlimited)
-│  ✓ Auto-upload every 5 check-ins    │
-│  ✓ Survives device loss              │
-│  ✓ YOU control your data             │
-└─────────────────────────────────────┘
-```
-
-### How It Works
-
-```
-User adds check-in
-    ↓
-✅ Saved to IndexedDB (Layer 1)
-    ↓
-✅ Backed up to localStorage (Layer 2)
-    ↓
-Counter increments (1, 2, 3, 4, 5...)
-    ↓
-Every 5th check-in:
-✅ Generate CSV from all check-ins
-✅ Upload to Google Drive (Layer 3)
-✅ Toast: "☁️ Backed up to Google Drive"
-```
-
-### Data Safety Comparison
-
-| Scenario | CSV Mode | PWA Mode |
-|----------|----------|----------|
-| Clear browser cache | ❌ Data lost | ✅ Auto-restored from localStorage |
-| Clear all site data | ❌ Everything gone | ✅ Download CSV from Google Drive |
-| Switch devices | ⚠️ Manual export/import | ✅ Sync via Google Drive |
-| Device lost/stolen | ❌ Data gone forever | ✅ Safe in Google Drive |
-| Accidental deletion | ❌ No recovery | ✅ Multiple backups available |
-
-### Google Drive Setup
-
-1. **Enable Google Drive API** in [Google Cloud Console](https://console.cloud.google.com/apis/library/drive.googleapis.com)
-2. **Create OAuth 2.0 Client ID:**
-   - Application type: Web application
-   - Authorized JavaScript origins: Your domain
-   - Authorized redirect URIs: `https://yourdomain.com/oauth2callback`
-3. **Add test users** (if app in testing mode): Your Google account email
-4. **Copy Client ID** to `config.js`
-
-On first check-in, you'll see a prompt to connect Google Drive. After connecting, backups happen automatically every 5 check-ins!
-
-**Check your backups:** [Google Drive → DroPin Backups](https://drive.google.com)
+| Page | URL | Description |
+|---|---|---|
+| Map | `index.html` | Main map with filters, search, clustering |
+| Check In | `checkin-now.html` | GPS-based venue search and quick check-in |
+| Add | `add-checkin.html` | Manual check-in with draggable pin |
+| Stats | `stats.html` | Travel statistics dashboard |
+| Import/Export | `import-export.html` | CSV import and export |
+| Sync | `sync.html` | Google Drive Push/Pull sync |
+| View | `view.html` | Read-only shareable map (no auth required) |
 
 ---
 
-## 📖 Storage Modes Explained
+## ☁️ Cross-Device Sync
 
-### CSV Mode (Default)
-**Best for:** Simple deployments, getting started
+The sync page (`sync.html`) keeps all your devices in sync via a single master CSV on Google Drive:
 
-✅ Pure static files - CSV is your database  
-✅ Zero dependencies  
-✅ Perfect for Netlify drag-and-drop  
-✅ Instant map updates  
+```
+Device A (mobile)          Google Drive               Device B (laptop)
+     │                          │                           │
+     ├── Push ──────────────► DroPin-Master.csv             │
+     │                          │                           │
+     │                          │ ◄────────────── Pull ─────┤
+     │                          │                           │
+     │              Preview diff (new check-ins only)       │
+     │                          │                           │
+     │                          │ ──── Merge ──────────────►│
+```
 
-⚠️ Manual export workflow  
-⚠️ No offline capability  
-⚠️ Data lost if cache cleared  
+- **Push** — uploads your local check-ins as the new master file (`DroPin-Master.csv` in the "DroPin Backups" folder)
+- **Pull & Merge** — downloads the master, shows you a diff preview, and merges only new check-ins (nothing deleted)
+- **Conflict-free** — deduplication is by `checkin_id`, so merging is always safe
 
-**Use CSV mode if:** You want the simplest setup and don't mind manually exporting check-ins.
+**First time setup:** On each device, go to Sync → Connect → sign in with the same Google account.
 
-### PWA Mode
-**Best for:** Power users, mobile-first, data safety
+---
 
-✅ Triple redundancy (3 backup layers!)  
-✅ Offline-first with IndexedDB  
-✅ Auto-backup to Google Drive  
-✅ Auto-recovery if cache cleared  
-✅ Works without internet  
+## 🛡️ PWA Triple Redundancy
 
-⚠️ Requires Google OAuth setup  
-⚠️ Slightly more complex config  
+In PWA mode, every check-in is saved to three independent layers:
 
-**Use PWA mode if:** You want bulletproof data safety and don't want to worry about losing check-ins.
+```
+Every check-in →
+  ✅ Layer 1: IndexedDB     (primary, 50MB+, offline)
+  ✅ Layer 2: localStorage  (backup, last 200 check-ins)
+  ✅ Layer 3: Google Drive  (permanent, auto-upload every 5 check-ins)
+```
 
-### Comparison Table
+If your browser cache is cleared, the app detects the empty IndexedDB and offers to restore from the localStorage backup. For a full restore, use Sync → Pull.
 
-| Feature | CSV Mode | PWA Mode |
-|---------|----------|----------|
-| **Setup time** | 5 min | 10 min |
-| **Data safety** | ⚠️ Manual | ✅ Triple redundancy |
-| **Offline mode** | ❌ | ✅ |
-| **Auto-backup** | ❌ | ✅ Google Drive |
-| **Cache clear survival** | ❌ | ✅ Auto-recovery |
-| **Multi-device** | ⚠️ Manual CSV | ⚠️ Via Google Drive |
-| **Best for** | Simple setups | Data safety |
+---
+
+## 📊 Travel Statistics
+
+`stats.html` shows:
+- **World choropleth map** — countries colored by visit intensity, click to zoom in
+- **Top 10 Countries** — horizontal bar chart
+- **Top 20 Cities** — click any city to fly the map there
+- **Distance insights** — furthest from home, average journey, longest single-day trip
+
+> The "home" location is hardcoded to Brussels in `js/stats/GeoStatsCalculator.js`. Change `homeLocation` to your city coordinates.
+
+---
+
+## 👀 Read-only Sharing (`view.html`)
+
+Share your travels without exposing your check-in interface. `view.html`:
+- Reads directly from `checkins_with_addresses.csv`
+- No navigation menu, no editing, no authentication
+- Full search (pins + worldwide geocoding) and filters
+- Shows "👀 View only" banner
+
+Share the direct URL: `https://your-domain.netlify.app/src/view.html`
+
+---
+
+## 🗺️ CSV Format
+
+```csv
+checkin_id,venue_name,venue_type,date,time,year,month,
+latitude,longitude,street_address,city,state,
+postal_code,country,country_code,full_address,
+foursquare_url,venue_id,notes,is_private
+```
+
+Download a template from the Import/Export page, or use the Foursquare/Swarm CSV export directly (column mapping may need adjustment).
 
 ---
 
 ## 🛠️ Technology Stack
 
-- **Frontend:** Vanilla JavaScript (ES6 modules)
-- **Maps:** [Leaflet.js](https://leafletjs.com/) with clustering
-- **Storage:** CSV files OR IndexedDB + Google Drive (PWA mode)
-- **OAuth:** Google Identity Services (modern OAuth2)
-- **Geocoding:** [Geoapify](https://www.geoapify.com/) (3,000 free/day)
-- **Places:** [Google Places API](https://developers.google.com/maps/documentation/places)
-- **Hosting:** Netlify, Vercel, GitHub Pages, any static host
-
----
-
-## 🎯 Why DroPin?
-
-### The Problem
-- **Foursquare/Swarm shut down their API** - millions of check-ins trapped
-- **Google owns your location data** - no export, no control
-- **Existing solutions are complex** - databases, servers, technical setup
-- **Data loss anxiety** - one cache clear and everything's gone
-
-### The Solution
-✅ **Simplest possible architecture** - HTML + CSV OR bulletproof PWA  
-✅ **No backend required** - deploys anywhere  
-✅ **Your data, your control** - CSV files OR your Google Drive  
-✅ **Beautiful design** - Apple-inspired UI  
-✅ **Data safety options** - Choose your comfort level  
-✅ **Free to host** - Netlify/Vercel free tiers  
-
----
-
-## 💡 Use Cases
-
-- **Former Swarm users** - Export Foursquare data and self-host
-- **Privacy-conscious travelers** - Keep location data under your control
-- **Digital nomads** - Track your journey across countries
-- **Travel bloggers** - Visualize adventures on your own domain
-- **Mobile-first users** - PWA mode works offline on phones
-- **Data hoarders** - Triple backup means never losing a check-in
+- **Frontend:** Vanilla JavaScript (ES6 modules), no framework
+- **Maps:** [Leaflet.js](https://leafletjs.com/) with MarkerCluster
+- **Stats map:** Leaflet + Natural Earth GeoJSON (via GitHub CDN)
+- **Charts:** [Chart.js](https://www.chartjs.org/)
+- **Storage:** CSV files OR IndexedDB + localStorage (PWA mode)
+- **Sync:** Google Drive API v3 (direct REST, no SDK)
+- **OAuth:** Google Identity Services (GIS) — implicit token flow
+- **Geocoding:** [Geoapify](https://www.geoapify.com/) (addresses) + Nominatim (map search)
+- **Places:** Google Places API v1 (New)
+- **Hosting:** Netlify, Vercel, GitHub Pages, or any static host
 
 ---
 
 ## 🔐 Privacy & Security
 
-### Data Storage
-- **CSV mode:** Files on your static host (Netlify/Vercel)
-- **PWA mode:** Your browser + your Google Drive
-- **No third-party servers:** Zero external tracking or analytics
-- **No cookies:** Not even for analytics
-- **Your API keys:** Stay in your config.js (never committed)
-
-### Google Drive Permissions
-- **Minimal scope:** Only `drive.file` (files created by this app)
-- **Cannot access:** Your other Google Drive files
-- **You control:** Delete backups anytime from your Drive
-- **Modern OAuth:** Google Identity Services (not deprecated gapi)
+- **No third-party servers** — API calls go directly to Google/Geoapify from your browser
+- **No analytics** — zero tracking, no cookies set by DroPin itself
+- **Google Drive scope** — uses `drive` scope (required for cross-device file discovery). Files are stored in a dedicated "DroPin Backups" subfolder
+- **Your keys stay local** — `config.js` is in `.gitignore` and never committed
 
 ### Best Practices
-⚠️ Never commit `config.js` with real keys to public repos  
-✅ Use domain restrictions for API keys in Google Cloud Console  
-✅ Keep private instances in private GitHub repos  
-✅ Review Google Cloud OAuth consent screen settings  
+⚠️ Never commit `config.js` with real API keys to a public repo  
+✅ Restrict API keys by domain in Google Cloud Console  
+✅ Keep your instance in a private GitHub repo  
+✅ Add test users in Google OAuth consent screen if app is in "Testing" mode  
 
 ---
 
 ## 🗺️ Roadmap
 
 **Completed ✅**
-- [x] CSV-based storage with instant updates
-- [x] Export All / Export New functionality
-- [x] Event-driven architecture
-- [x] Mobile map auto-refresh
-- [x] PWA Triple Redundancy System
-- [x] Google Drive auto-backup
-- [x] Auto-recovery from localStorage
+- [x] Interactive map with clustering, filters, year slider
+- [x] GPS-based quick check-in via Google Places API v1
+- [x] Manual check-in with draggable pin + auto-geocoding
+- [x] Smart search: pin search + worldwide Nominatim geocoding
+- [x] PWA triple redundancy (IndexedDB + localStorage + Google Drive auto-backup)
+- [x] Cross-device sync via Google Drive Push/Pull with merge preview
+- [x] Travel statistics dashboard (world map, charts, city rankings, distance stats)
+- [x] Read-only shareable map (`view.html`)
+- [x] CSV import/export with iOS paste support
+- [x] iOS click/touch fixes
 
 **Coming Soon 🚀**
-- [ ] Settings panel (view backup status, manual backup)
-- [ ] Import old CSV into PWA storage
-- [ ] Dark mode toggle
-- [ ] Service Worker for full PWA installability
-- [ ] Travel statistics dashboard
-- [ ] Import from Foursquare/Swarm exports
+- [ ] Dark mode
+- [ ] Service Worker for full PWA installability (home screen icon, offline caching)
 - [ ] Photo attachments
-- [ ] Real-time multi-device sync (Firebase/Supabase)
+- [ ] Import from Foursquare/Swarm CSV export (column auto-mapping)
+- [ ] Settings panel (backup status, manual backup trigger)
 
 ---
 
 ## 📱 Browser Compatibility
 
-### CSV Mode
 ✅ iOS Safari 14+  
 ✅ Chrome 90+  
 ✅ Firefox 88+  
 ✅ Edge 90+  
-✅ Mobile browsers  
+✅ Mobile browsers (tested on iPhone and Android)  
 
-### PWA Mode (additional requirements)
-✅ IndexedDB support (all modern browsers)  
-✅ HTTPS required for Google OAuth  
-✅ Third-party cookies enabled for Google sign-in  
+Requires HTTPS for Google OAuth and geolocation. Netlify/Vercel provide this automatically.
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome! Whether you:
-- 🐛 Found a bug
-- 💡 Have a feature idea
-- 📖 Want to improve documentation
-- 🎨 Can enhance the design
+Contributions welcome! Whether you found a bug, have a feature idea, or want to improve the docs:
 
-**Please:**
 1. Fork the repository
-2. Create feature branch (`git checkout -b feature/Amazing`)
-3. Commit changes (`git commit -m 'Add Amazing'`)
-4. Push to branch (`git push origin feature/Amazing`)
+2. Create a feature branch (`git checkout -b feature/my-feature`)
+3. Commit your changes (`git commit -m 'Add my feature'`)
+4. Push to the branch (`git push origin feature/my-feature`)
 5. Open a Pull Request
 
 ---
@@ -347,21 +244,22 @@ Contributions are welcome! Whether you:
 ## 🙏 Acknowledgments
 
 - Inspired by Foursquare/Swarm's check-in experience
-- Built with [Leaflet](https://leafletjs.com/) and [Leaflet.markercluster](https://github.com/Leaflet/Leaflet.markercluster)
-- Map tiles by [CARTO](https://carto.com/) and [OpenStreetMap](https://www.openstreetmap.org/)
-- Geocoding by [Geoapify](https://www.geoapify.com/)
-- Places data from [Google Places API](https://developers.google.com/maps/documentation/places)
-- OAuth via [Google Identity Services](https://developers.google.com/identity/gsi/web)
+- Maps by [Leaflet](https://leafletjs.com/) + [Leaflet.markercluster](https://github.com/Leaflet/Leaflet.markercluster)
+- Map tiles by [CARTO](https://carto.com/) / [OpenStreetMap](https://www.openstreetmap.org/)
+- World borders GeoJSON by [Natural Earth](https://www.naturalearthdata.com/) via [nvkelso/natural-earth-vector](https://github.com/nvkelso/natural-earth-vector)
+- Geocoding by [Geoapify](https://www.geoapify.com/) and [Nominatim](https://nominatim.org/)
+- Places data by [Google Places API](https://developers.google.com/maps/documentation/places)
+- Auth via [Google Identity Services](https://developers.google.com/identity/gsi/web)
 
 ---
 
 ## 📄 License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
-## 💬 Support & Community
+## 💬 Support
 
 - 🐛 **Bug reports:** [GitHub Issues](https://github.com/pingou100/DroPin/issues)
 - 💬 **Discussions:** [GitHub Discussions](https://github.com/pingou100/DroPin/discussions)
@@ -369,19 +267,9 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ---
 
-## 🌍 Built for Travelers, by Travelers
-
-DroPin was created because travel memories should belong to you, not be locked in a corporate database. Whether you've checked in to 10 places or 10,000, your data deserves a beautiful home that you control.
-
-Choose CSV mode for simplicity. Choose PWA mode for peace of mind. Either way, your memories are yours forever.
-
-**Start tracking your travels today.** Deploy in 5-10 minutes, own your data forever.
-
----
-
 <div align="center">
 
-**[Get Started](#-quick-start)** • **[PWA Setup](#️-pwa-triple-redundancy-system)** • **[Report Bug](https://github.com/pingou100/DroPin/issues)**
+**[Get Started](#-quick-start)** • **[Sync Setup](#️-cross-device-sync)** • **[Report Bug](https://github.com/pingou100/DroPin/issues)**
 
 Made with ❤️ for travelers and explorers worldwide
 
