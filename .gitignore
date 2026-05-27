@@ -1,5 +1,7 @@
 dropin-public/
+DroPin-clean/
 .~lock.*#
+.DS_Store
 
 # Configuration with real API keys
 config.js
