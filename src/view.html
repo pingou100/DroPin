@@ -81,6 +81,7 @@
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+<script src="./config.js"></script>
 
 <script>
 /*
@@ -210,8 +211,49 @@ window.sharePin = async function(c) {
 
 function showToast(msg) { const t = document.createElement('div'); t.textContent = msg; t.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:white;padding:10px 18px;border-radius:10px;font-size:13px;z-index:9999;'; document.body.appendChild(t); setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); }, 2000); }
 
+const DRIVE_MASTER_FILE_ID = '1hn21Po7mBc33AKmk8YY6p82x172vQ0VJ';
+
+async function loadFromDrive() {
+    const url = `https://drive.google.com/uc?export=download&id=${DRIVE_MASTER_FILE_ID}`;
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('Drive fetch failed: ' + resp.status);
+    const text = await resp.text();
+    const lines = text.trim().split('\n');
+    if (lines.length < 2) throw new Error('Empty file');
+    const headers = parseCSVLine(lines[0]);
+    const checkins = lines.slice(1).map(line => {
+        const values = parseCSVLine(line);
+        const obj = {};
+        headers.forEach((h, i) => { obj[h.trim()] = (values[i] || '').trim(); });
+        return obj;
+    }).filter(r => r.latitude && r.longitude);
+    console.log('[View] Loaded', checkins.length, 'checkins from Google Drive');
+    return checkins;
+}
+
+async function loadFromStorage() {
+    // 1. Own device: IndexedDB (fastest, most current)
+    try {
+        const { default: StorageAdapter } = await import('./js/storage/StorageAdapter.js');
+        const storage = new StorageAdapter(null, window.CONFIG);
+        await storage.initialize();
+        const checkins = await storage.backend.getAll();
+        if (checkins && checkins.length > 0) return checkins;
+    } catch(e) {
+        console.warn('[View] IndexedDB failed:', e);
+    }
+    // 2. Visitors: fetch public master CSV from Google Drive
+    try {
+        return await loadFromDrive();
+    } catch(e) {
+        console.warn('[View] Drive fetch failed, falling back to static CSV:', e);
+    }
+    // 3. Last resort: static CSV
+    return await loadCSV();
+}
+
 async function init() {
-    allCheckins = await loadCSV();
+    allCheckins = await loadFromStorage();
     const countries = [...new Set(allCheckins.map(c=>c.country).filter(Boolean))].sort();
     const types = [...new Set(allCheckins.map(c=>c.venue_type).filter(Boolean))].sort();
     const cf = document.getElementById('countryFilter'); countries.forEach(c => { const o=document.createElement('option'); o.value=c; o.textContent=c; cf.appendChild(o); });
