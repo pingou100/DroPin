@@ -84,13 +84,6 @@
 <script src="./config.js"></script>
 
 <script>
-/*
- * view.html — Read-only shareable map
- *
- * Priority: IndexedDB (PWA mode) → fallback to checkins_with_addresses.csv
- * No authentication, no editing, no check-in capability.
- */
-
 async function loadCSV() {
     const resp = await fetch('./checkins_with_addresses.csv');
     const text = await resp.text();
@@ -210,7 +203,29 @@ window.sharePin = async function(c) {
 
 function showToast(msg) { const t = document.createElement('div'); t.textContent = msg; t.style.cssText = 'position:fixed;top:70px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.8);color:white;padding:10px 18px;border-radius:10px;font-size:13px;z-index:9999;'; document.body.appendChild(t); setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); }, 2000); }
 
+// Public Google Drive file ID for DroPin-Master.csv ("Anyone with link" — viewer)
+const DRIVE_MASTER_FILE_ID = '1hn21Po7mBc33AKmk8YY6p82x172vQ0VJ';
+
+async function loadFromDrive() {
+    const url = `https://drive.google.com/uc?export=download&id=${DRIVE_MASTER_FILE_ID}`;
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('Drive fetch failed: ' + resp.status);
+    const text = await resp.text();
+    const lines = text.trim().split('\n');
+    if (lines.length < 2) throw new Error('Empty file');
+    const headers = parseCSVLine(lines[0]);
+    const checkins = lines.slice(1).map(line => {
+        const values = parseCSVLine(line);
+        const obj = {};
+        headers.forEach((h, i) => { obj[h.trim()] = (values[i] || '').trim(); });
+        return obj;
+    }).filter(r => r.latitude && r.longitude);
+    console.log('[View] Loaded', checkins.length, 'checkins from Google Drive');
+    return checkins;
+}
+
 async function loadFromStorage() {
+    // 1. Own devices: read from IndexedDB (fastest, always current)
     try {
         const { default: StorageAdapter } = await import('./js/storage/StorageAdapter.js');
         const storage = new StorageAdapter(null, window.CONFIG);
@@ -218,8 +233,15 @@ async function loadFromStorage() {
         const checkins = await storage.backend.getAll();
         if (checkins && checkins.length > 0) return checkins;
     } catch(e) {
-        console.warn('[View] StorageAdapter failed, falling back to CSV:', e);
+        console.warn('[View] IndexedDB failed:', e);
     }
+    // 2. Visitors: fetch public Drive master CSV (no auth required)
+    try {
+        return await loadFromDrive();
+    } catch(e) {
+        console.warn('[View] Drive fetch failed, falling back to static CSV:', e);
+    }
+    // 3. Last resort: static CSV bundled with the Netlify deploy
     return await loadCSV();
 }
 
